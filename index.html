@@ -1,587 +1,1315 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#08111f">
-    <title>Tiempo Juntos</title>
-    <style>
-        :root{
-            --bg: #050816;
-            --panel: rgba(10, 18, 35, 0.72);
-            --panel-strong: rgba(14, 24, 46, 0.92);
-            --line: rgba(120, 181, 255, 0.18);
-            --text: #eaf2ff;
-            --muted: #95a6c8;
-            --accent: #62d0ff;
-            --accent-2: #8f7bff;
-            --danger: #ff5b78;
-            --success: #54efc3;
-            --shadow: 0 20px 80px rgba(0,0,0,0.45);
-            --radius: 24px;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title>Tiempo Juntos</title>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
+  <!-- PWA: full screen sin barra de navegador -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Tiempo Juntos" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0b0b10" />
+  <meta name="description" content="Contador romantico de tiempo juntos" />
 
-        html, body {
-            min-height: 100%;
-        }
+  <!-- Icono touch para iOS (se genera dinamicamente, pero dejamos fallback) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff5e8d' d='M12 20.5c5.2-3.7 8.5-7.4 8.5-11.2A4.8 4.8 0 0 0 15.7 4c-1.6 0-3 .8-3.7 2-0.7-1.2-2.1-2-3.7-2A4.8 4.8 0 0 0 3.5 9.3c0 3.8 3.3 7.5 8.5 11.2Z'/%3E%3C/svg%3E" />
 
-        body {
-            color: var(--text);
-            text-align: center;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            overflow-x: hidden;
-            background:
-                radial-gradient(circle at top, rgba(98,208,255,0.12), transparent 34%),
-                radial-gradient(circle at bottom right, rgba(143,123,255,0.16), transparent 28%),
-                linear-gradient(135deg, #04060f 0%, #071326 42%, #050816 100%);
-        }
+  <style>
+    :root{
+      --bg1:#050507;
+      --bg2:#0d0d16;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.12);
+      --line:rgba(255,255,255,.11);
+      --text:#f7f7fb;
+      --muted:rgba(247,247,251,.68);
+      --accent:#ff5e8d;
+      --accent2:#ff9ab8;
+      --accent3:#ffd8e4;
+      --glow:0 0 24px rgba(255,94,141,.22);
+      --shadow:0 24px 60px rgba(0,0,0,.48);
+    }
 
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background:
-                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 34px 34px;
-            mask-image: radial-gradient(circle at center, black 38%, transparent 100%);
-            opacity: 0.35;
-        }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{
+      width:100%; height:100%; margin:0; overflow:hidden;
+      background:
+        radial-gradient(circle at top, #1a1a2a 0%, #0b0b10 50%, #050507 100%);
+      color:var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      /* Evita seleccion de texto no deseada en modo app */
+      -webkit-user-select:none; user-select:none;
+    }
 
-        .hidden { display: none !important; }
+    body{
+      min-height:100dvh;
+      min-height:100vh;
+      padding:max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+              max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      display:grid;
+      place-items:center;
+      position:relative;
+    }
 
-        #install-screen,
-        #app-screen {
-            width: 100%;
-            max-width: 460px;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid var(--line);
-            box-shadow: var(--shadow);
-            animation: fadeInUp 0.7s ease both;
-        }
+    canvas#fireflies{
+      position:fixed; inset:0;
+      width:100%; height:100%;
+      pointer-events:none; z-index:0;
+    }
 
-        #install-screen {
-            background: linear-gradient(180deg, rgba(12, 21, 41, 0.88), rgba(8, 14, 28, 0.96));
-            padding: 34px 24px 28px;
-            border-radius: var(--radius);
-        }
+    .ambient{
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255,94,141,.12), transparent 22%),
+        radial-gradient(circle at 82% 28%, rgba(255,216,228,.10), transparent 20%),
+        radial-gradient(circle at 52% 82%, rgba(255,255,255,.05), transparent 32%);
+      filter: blur(16px);
+    }
 
-        #app-screen {
-            background: linear-gradient(180deg, rgba(12, 21, 41, 0.78), rgba(8, 14, 28, 0.92));
-            padding: 28px 24px;
-            border-radius: var(--radius);
-        }
+    .shell{ width:min(100%, 430px); position:relative; z-index:2; }
 
-        #install-screen::after,
-        #app-screen::after {
-            content: "";
-            position: absolute;
-            inset: -2px;
-            border-radius: inherit;
-            padding: 2px;
-            background: linear-gradient(135deg, rgba(98,208,255,0.35), rgba(143,123,255,0.2), rgba(84,239,195,0.16));
-            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            mask-composite: exclude;
-            pointer-events: none;
-            opacity: 0.55;
-        }
+    .card{
+      width:100%;
+      border-radius:32px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      animation: rise .7s ease both;
+    }
 
-        h1, h2 {
-            letter-spacing: 0.4px;
-            line-height: 1.1;
-        }
+    @keyframes rise{
+      from{ opacity:0; transform:translateY(18px) scale(.985); }
+      to{ opacity:1; transform:translateY(0) scale(1); }
+    }
 
-        #install-screen h1 {
-            margin-bottom: 12px;
-            font-size: clamp(1.7rem, 4vw, 2.1rem);
-            color: var(--text);
-            text-shadow: 0 0 18px rgba(98,208,255,0.15);
-        }
+    .topbar{
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:18px 18px 0 18px;
+    }
 
-        #install-screen p {
-            color: var(--muted);
-            margin-bottom: 20px;
-            line-height: 1.6;
-            font-size: 0.98rem;
-        }
+    .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
+    .brand-mark{
+      width:42px; height:42px; border-radius:15px;
+      display:grid; place-items:center;
+      background:linear-gradient(135deg, rgba(255,94,141,.28), rgba(255,216,228,.16));
+      border:1px solid rgba(255,255,255,.13);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), var(--glow);
+      flex:0 0 auto;
+    }
 
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 14px;
-            margin-bottom: 18px;
-            border-radius: 999px;
-            border: 1px solid rgba(98,208,255,0.24);
-            background: rgba(98,208,255,0.08);
-            color: var(--accent);
-            font-size: 0.78rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            animation: pulseGlow 2.4s ease-in-out infinite;
-        }
+    .brand-title{ display:flex; flex-direction:column; min-width:0; }
+    .brand-title strong{
+      font-size:.98rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .brand-title span{ font-size:.8rem; color:var(--muted); }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 0 0 16px rgba(98,208,255,0.8);
-        }
+    .status{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.06);
+      color:var(--accent3);
+      font-size:.82rem;
+      flex:0 0 auto;
+    }
+    .status-dot{
+      width:9px; height:9px; border-radius:50%;
+      background:#66ffad; box-shadow:0 0 16px rgba(102,255,173,.85);
+      animation: dot 1.8s infinite ease-in-out;
+    }
+    @keyframes dot{
+      0%,100%{ transform:scale(1); opacity:.85; }
+      50%{ transform:scale(1.35); opacity:1; }
+    }
 
-        .install-btn {
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            padding: 16px 18px;
-            border-radius: 16px;
-            color: #06101d;
-            font-size: 1rem;
-            font-weight: 800;
-            letter-spacing: 0.02em;
-            background: linear-gradient(135deg, #7ae7ff 0%, #8f7bff 100%);
-            box-shadow: 0 14px 40px rgba(98,208,255,0.22);
-            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
-            position: relative;
-            overflow: hidden;
-        }
+    .hero{
+      padding:14px 18px 0 18px;
+      text-align:center;
+    }
 
-        .install-btn::before,
-        .btn::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -120%;
-            width: 120%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transform: skewX(-22deg);
-            transition: left 0.7s ease;
-        }
+    .symbol-line{
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      margin:8px auto 10px;
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.09);
+      background:rgba(255,255,255,.05);
+      flex-wrap:wrap;
+    }
 
-        .install-btn:hover::before,
-        .btn:hover::before {
-            left: 120%;
-        }
+    .mini{
+      width:8px; height:8px; border-radius:50%;
+      background:#fff; opacity:.88; box-shadow:0 0 12px rgba(255,255,255,.8);
+      animation: twinkle 1.7s infinite ease-in-out;
+    }
+    .mini:nth-child(2){ animation-delay:.18s; }
+    .mini:nth-child(4){ animation-delay:.36s; }
+    .mini:nth-child(6){ animation-delay:.54s; }
 
-        .install-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 18px 48px rgba(98,208,255,0.28);
-        }
+    @keyframes twinkle{
+      0%,100%{ transform:scale(.7); opacity:.45; }
+      50%{ transform:scale(1.25); opacity:1; }
+    }
 
-        .install-btn:active {
-            transform: scale(0.98);
-        }
+    .heart{
+      width:11px; height:11px; background:linear-gradient(135deg, #ff7aa5, #ff4b77);
+      border-radius:50% 50% 0 0; position:relative; transform:rotate(-45deg);
+      animation: beat 1.2s infinite ease-in-out;
+      box-shadow:0 0 20px rgba(255,94,141,.35);
+      flex:0 0 auto;
+    }
+    .heart::before,.heart::after{
+      content:""; position:absolute; width:11px; height:11px; background:inherit; border-radius:50%;
+    }
+    .heart::before{ top:-5.5px; left:0; }
+    .heart::after{ top:0; left:5.5px; }
 
-        .install-btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-            box-shadow: none;
-            filter: grayscale(0.2);
-        }
+    @keyframes beat{
+      0%,100%{ transform:rotate(-45deg) scale(1); }
+      50%{ transform:rotate(-45deg) scale(1.2); }
+    }
 
-        .ios-hint {
-            display: none;
-            margin-top: 16px;
-            padding: 14px 16px;
-            border-radius: 14px;
-            border: 1px solid rgba(84,239,195,0.18);
-            background: rgba(84,239,195,0.08);
-            color: #bff7ea;
-            line-height: 1.55;
-            font-size: 0.92rem;
-        }
+    .love-title{
+      margin:0;
+      font-size:clamp(1.22rem, 4.5vw, 1.85rem);
+      letter-spacing:.2px;
+      line-height:1.15;
+    }
+    .love-subtitle{
+      margin:10px 0 0 0;
+      color:var(--muted);
+      font-size:.95rem;
+      line-height:1.5;
+    }
 
-        .footer-note {
-            margin-top: 16px;
-            font-size: 0.76rem;
-            color: rgba(149,166,200,0.78);
-            letter-spacing: 0.03em;
-        }
+    .counter-wrap{ padding:18px; }
 
-        h2 {
-            color: var(--text);
-            margin-bottom: 6px;
-            font-size: clamp(1.45rem, 3.5vw, 1.8rem);
-        }
+    .counter{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:12px;
+    }
 
-        .subtitle {
-            font-size: 0.86rem;
-            color: var(--muted);
-            margin-bottom: 18px;
-        }
+    .tile{
+      position:relative;
+      overflow:hidden;
+      min-height:96px;
+      padding:14px 13px;
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.10);
+      background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      transform: translateZ(0);
+    }
 
-        .input-group {
-            margin: 12px 0;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
+    .tile::before{
+      content:"";
+      position:absolute;
+      inset:-40% -40% auto auto;
+      width:130px; height:130px;
+      background:radial-gradient(circle, rgba(255,255,255,.10), transparent 68%);
+      pointer-events:none;
+    }
 
-        input {
-            padding: 13px 14px;
-            width: 100%;
-            border: 1px solid rgba(98,208,255,0.12);
-            border-radius: 14px;
-            font-size: 1rem;
-            background: rgba(255,255,255,0.04);
-            color: var(--text);
-            outline: none;
-            transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
-        }
+    .label{
+      display:flex; align-items:center; gap:8px;
+      color:var(--muted);
+      font-size:.76rem;
+      text-transform:uppercase;
+      letter-spacing:.28px;
+      margin-bottom:7px;
+    }
 
-        input::placeholder { color: rgba(149,166,200,0.72); }
+    .label .sym{
+      width:16px; height:16px; border-radius:50%;
+      display:grid; place-items:center;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.08);
+      color:#fff;
+      font-size:.72rem;
+      box-shadow:0 0 10px rgba(255,255,255,.08);
+      flex:0 0 auto;
+    }
 
-        input:focus {
-            border-color: rgba(98,208,255,0.45);
-            box-shadow: 0 0 0 3px rgba(98,208,255,0.12);
-        }
+    .value{
+      font-size:clamp(1.25rem, 5vw, 2rem);
+      font-weight:800;
+      letter-spacing:.2px;
+      line-height:1.05;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 12px rgba(255,255,255,.05);
+    }
 
-        input:read-only {
-            background: rgba(255,255,255,0.03);
-            color: rgba(234,242,255,0.92);
-        }
+    .full-width{
+      grid-column:1 / -1;
+      min-height:104px;
+    }
 
-        .btn {
-            position: relative;
-            overflow: hidden;
-            padding: 12px 18px;
-            border: none;
-            border-radius: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease, background .18s ease;
-            color: #06101d;
-            background: linear-gradient(135deg, #7ae7ff 0%, #8f7bff 100%);
-            box-shadow: 0 12px 32px rgba(98,208,255,0.16);
-        }
+    .info-stack{
+      margin-top:12px;
+      display:grid;
+      gap:10px;
+    }
 
-        .btn:hover { transform: translateY(-1px); }
-        .btn:active { transform: scale(0.985); }
+    .info-box{
+      padding:14px 15px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      color:var(--muted);
+      font-size:.92rem;
+      line-height:1.55;
+    }
 
-        .btn-outline {
-            background: transparent;
-            color: var(--accent);
-            border: 1px solid rgba(98,208,255,0.35);
-            box-shadow: none;
-        }
+    .info-box strong{ color:var(--text); font-weight:700; }
 
-        .btn-danger {
-            background: linear-gradient(135deg, #ff758c 0%, #ff5b78 100%);
-            color: white;
-        }
+    .button-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
 
-        .actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
+    .btn{
+      appearance:none; border:none; cursor:pointer;
+      border-radius:16px; padding:13px 14px;
+      color:white; font-weight:800;
+      letter-spacing:.2px; font-size:.95rem;
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+      box-shadow:0 12px 28px rgba(0,0,0,.25);
+    }
+    .btn:active{ transform:scale(.98); filter:brightness(1.03); }
 
-        .counter-box {
-            margin: 20px 0 8px;
-            padding: 16px 16px 18px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-            border-radius: 18px;
-            border: 1px solid rgba(98,208,255,0.12);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-            position: relative;
-        }
+    .btn-primary{
+      background:linear-gradient(135deg, #ff5d8f, #ff8ea9);
+      box-shadow: 0 14px 28px rgba(255,94,141,.20);
+    }
 
-        .counter-box::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at top, rgba(98,208,255,0.1), transparent 45%);
-            pointer-events: none;
-        }
+    .btn-secondary{
+      background:linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+      border:1px solid rgba(255,255,255,.12);
+    }
 
-        .live-tag {
-            display: inline-block;
-            margin-bottom: 8px;
-            padding: 5px 10px;
-            border-radius: 999px;
-            background: rgba(84,239,195,0.12);
-            color: var(--success);
-            font-size: 0.72rem;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            border: 1px solid rgba(84,239,195,0.22);
-        }
+    .sparkle-line{
+      margin-top:14px;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      color:rgba(255,255,255,.7);
+      font-size:.86rem;
+      flex-wrap:wrap;
+    }
 
-        .decor {
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 8px;
-        }
+    .spark{
+      width:6px; height:6px; border-radius:50%;
+      background:#fff; opacity:.88;
+      box-shadow:0 0 12px rgba(255,255,255,.75);
+      animation: tw 1.6s infinite ease-in-out;
+    }
+    .spark:nth-child(2){ animation-delay:.2s; }
+    .spark:nth-child(4){ animation-delay:.4s; }
 
-        .counter-desc {
-            font-size: 0.9rem;
-            margin: 10px 0 16px;
-            color: var(--muted);
-            line-height: 1.5;
-        }
+    @keyframes tw{
+      0%,100%{ transform:scale(.72); opacity:.45; }
+      50%{ transform:scale(1.2); opacity:1; }
+    }
 
-        .values {
-            font-size: 1.08rem;
-            line-height: 2.25;
-            color: var(--text);
-        }
+    .footer-note{
+      text-align:center;
+      color:rgba(247,247,251,.56);
+      font-size:.78rem;
+      padding:0 18px 16px 18px;
+    }
 
-        .value-label {
-            color: var(--muted);
-        }
+    .overlay{
+      position:fixed; inset:0; z-index:10;
+      background:rgba(5,5,8,.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      display:grid; place-items:center;
+      padding:18px;
+    }
 
-        .value-number {
-            color: var(--accent);
-            font-weight: 800;
-            text-shadow: 0 0 18px rgba(98,208,255,0.18);
-        }
+    .setup{
+      width:min(100%, 430px);
+      border-radius:28px;
+      padding:18px;
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.08));
+      box-shadow: var(--shadow);
+      animation: rise .6s ease both;
+    }
 
-        .date-display {
-            font-size: 0.88rem;
-            color: var(--muted);
-            margin: 12px 0 4px;
-        }
+    .setup h1{
+      margin:6px 0 8px 0;
+      text-align:center;
+      font-size:1.35rem;
+      line-height:1.2;
+    }
 
-        .note {
-            font-size: 0.75rem;
-            color: rgba(149,166,200,0.8);
-            margin-top: 14px;
-        }
+    .setup p{
+      margin:0 0 16px 0;
+      text-align:center;
+      color:var(--muted);
+      font-size:.94rem;
+      line-height:1.5;
+    }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(18px) scale(0.98);
-                filter: blur(4px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-                filter: blur(0);
-            }
-        }
+    .field{ display:grid; gap:8px; margin-top:12px; }
+    .field label{
+      font-size:.82rem;
+      color:var(--muted);
+      padding-left:2px;
+    }
 
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 0 rgba(98,208,255,0); transform: translateY(0); }
-            50% { box-shadow: 0 0 24px rgba(98,208,255,0.14); transform: translateY(-1px); }
-        }
+    .input{
+      width:100%;
+      border-radius:16px;
+      padding:14px 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.20);
+      color:var(--text);
+      font-size:1rem;
+      outline:none;
+    }
 
-        @media (max-width: 420px) {
-            body { padding: 16px; }
-            #install-screen, #app-screen { padding-left: 18px; padding-right: 18px; border-radius: 22px; }
-            .input-group { flex-direction: column; }
-            .actions { gap: 8px; }
-            .btn { width: 100%; }
-        }
-    </style>
+    .input:focus{
+      border-color:rgba(255,94,141,.55);
+      box-shadow:0 0 0 4px rgba(255,94,141,.12);
+    }
+
+    .setup-actions{ display:grid; gap:10px; margin-top:16px; }
+
+    .hint{
+      margin-top:10px;
+      color:rgba(247,247,251,.56);
+      font-size:.78rem;
+      text-align:center;
+      line-height:1.4;
+    }
+
+    .hidden{ display:none !important; }
+
+    /* Boton de instalacion (flotante) */
+    .install-btn-wrap {
+      text-align: center;
+      padding: 6px 18px 12px 18px;
+    }
+    .install-btn {
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+    }
+
+    @media (max-width: 380px){
+      .counter{ grid-template-columns:1fr; }
+      .button-row{ grid-template-columns:1fr; }
+      .topbar{ align-items:flex-start; }
+      .status{ font-size:.76rem; }
+    }
+
+    /* Ajuste para modo standalone (sin barras) */
+    @media (display-mode: standalone) {
+      body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+    }
+
+    /* ============================================
+       PANTALLA DE BLOQUEO - INSTALACION REQUERIDA
+       ============================================ */
+    .block-screen{
+      position:fixed;
+      inset:0;
+      z-index:100;
+      display:grid;
+      place-items:center;
+      padding:24px;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(255,94,141,.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(120,80,255,.06) 0%, transparent 50%),
+        linear-gradient(180deg, #07070a 0%, #0d0d14 100%);
+      overflow:hidden;
+    }
+
+    .block-screen::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(255,255,255,.015) 2px,
+          rgba(255,255,255,.015) 4px
+        );
+      pointer-events:none;
+      animation: scanline 8s linear infinite;
+    }
+
+    @keyframes scanline{
+      0%{ transform:translateY(-100%); }
+      100%{ transform:translateY(100%); }
+    }
+
+    .block-content{
+      position:relative;
+      z-index:2;
+      width:min(100%, 420px);
+      text-align:center;
+      animation: blockRise 1s cubic-bezier(.22,1,.36,1) both;
+    }
+
+    @keyframes blockRise{
+      from{ opacity:0; transform:translateY(40px) scale(.95); }
+      to{ opacity:1; transform:translateY(0) scale(1); }
+    }
+
+    .block-icon{
+      width:80px;
+      height:80px;
+      margin:0 auto 28px;
+      border-radius:24px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, rgba(255,94,141,.25), rgba(255,154,184,.12));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 0 40px rgba(255,94,141,.18),
+        0 8px 32px rgba(0,0,0,.4);
+      position:relative;
+    }
+
+    .block-icon::after{
+      content:"";
+      position:absolute;
+      inset:-4px;
+      border-radius:28px;
+      border:1px solid rgba(255,94,141,.2);
+      animation: pulseRing 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulseRing{
+      0%,100%{ transform:scale(1); opacity:.6; }
+      50%{ transform:scale(1.08); opacity:.2; }
+    }
+
+    .block-icon svg{
+      filter: drop-shadow(0 0 12px rgba(255,94,141,.5));
+      animation: iconFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes iconFloat{
+      0%,100%{ transform:translateY(0); }
+      50%{ transform:translateY(-4px); }
+    }
+
+    .block-title{
+      font-size:clamp(1.6rem, 6vw, 2.2rem);
+      font-weight:800;
+      letter-spacing:-.5px;
+      margin:0 0 12px 0;
+      background:linear-gradient(135deg, #fff 0%, #ff9ab8 100%);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      line-height:1.2;
+    }
+
+    .block-subtitle{
+      font-size:1.05rem;
+      color:var(--muted);
+      line-height:1.6;
+      margin:0 0 36px 0;
+      max-width:320px;
+      margin-left:auto;
+      margin-right:auto;
+    }
+
+    .block-btn{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      width:100%;
+      max-width:280px;
+      padding:16px 28px;
+      border-radius:18px;
+      font-size:1.05rem;
+      font-weight:800;
+      color:#fff;
+      letter-spacing:.3px;
+      background:linear-gradient(135deg, #ff5d8f, #ff8ea9);
+      box-shadow:
+        0 0 30px rgba(255,94,141,.25),
+        0 12px 32px rgba(255,94,141,.15),
+        inset 0 1px 0 rgba(255,255,255,.2);
+      transition: all .3s cubic-bezier(.22,1,.36,1);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .block-btn::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
+      transform:translateX(-100%);
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer{
+      0%{ transform:translateX(-100%); }
+      50%,100%{ transform:translateX(100%); }
+    }
+
+    .block-btn:hover{
+      transform:translateY(-2px) scale(1.02);
+      box-shadow:
+        0 0 50px rgba(255,94,141,.35),
+        0 16px 40px rgba(255,94,141,.2),
+        inset 0 1px 0 rgba(255,255,255,.25);
+    }
+
+    .block-btn:active{
+      transform:translateY(0) scale(.98);
+    }
+
+    .block-btn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      transform:none;
+    }
+
+    .block-hint{
+      margin-top:24px;
+      font-size:.8rem;
+      color:rgba(247,247,251,.4);
+      line-height:1.5;
+    }
+
+    .block-particles{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index:1;
+    }
+
+    .b-particle{
+      position:absolute;
+      width:3px;
+      height:3px;
+      border-radius:50%;
+      background:rgba(255,94,141,.6);
+      box-shadow:0 0 10px rgba(255,94,141,.4);
+      animation: bFloat linear infinite;
+    }
+
+    @keyframes bFloat{
+      0%{ transform:translateY(100vh) scale(0); opacity:0; }
+      10%{ opacity:1; }
+      90%{ opacity:1; }
+      100%{ transform:translateY(-20vh) scale(1); opacity:0; }
+    }
+
+    .block-grid{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size:60px 60px;
+      mask-image:radial-gradient(circle at center, black 30%, transparent 70%);
+      -webkit-mask-image:radial-gradient(circle at center, black 30%, transparent 70%);
+    }
+
+    .block-glow{
+      position:absolute;
+      width:400px;
+      height:400px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(255,94,141,.12), transparent 60%);
+      top:50%;
+      left:50%;
+      transform:translate(-50%, -50%);
+      pointer-events:none;
+      z-index:0;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse{
+      0%,100%{ transform:translate(-50%, -50%) scale(1); opacity:.6; }
+      50%{ transform:translate(-50%, -50%) scale(1.2); opacity:.3; }
+    }
+
+    .block-ios-hint{
+      display:none;
+      margin-top:20px;
+      padding:14px 18px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+      font-size:.85rem;
+      color:var(--muted);
+      line-height:1.5;
+      max-width:320px;
+      margin-left:auto;
+      margin-right:auto;
+      animation: fadeIn .6s ease both;
+      animation-delay:.3s;
+      opacity:0;
+    }
+
+    @keyframes fadeIn{
+      to{ opacity:1; }
+    }
+
+    .block-ios-hint strong{
+      color:var(--text);
+    }
+
+    .block-line{
+      width:60px;
+      height:2px;
+      margin:0 auto 24px;
+      border-radius:2px;
+      background:linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: lineExpand 2s ease-in-out infinite;
+    }
+
+    @keyframes lineExpand{
+      0%,100%{ width:40px; opacity:.4; }
+      50%{ width:80px; opacity:1; }
+    }
+  </style>
 </head>
 <body>
+  <canvas id="fireflies"></canvas>
+  <div class="ambient"></div>
 
-    <div id="install-screen">
-        <div class="status-pill"><span class="status-dot"></span> acceso web deshabilitado</div>
-        <h1>Debes instalar la aplicación</h1>
-        <p>Para continuar, instala la aplicación en tu dispositivo. Desde la página solo verás este aviso; la funcionalidad completa estará disponible únicamente en la aplicación instalada.</p>
-        <button id="install-btn" class="install-btn" disabled>Instalar aplicación</button>
-        <div id="ios-help" class="ios-hint">
-            En iPhone o iPad, abre el menú de compartir y elige la opción para agregar a la pantalla de inicio.
-        </div>
-        <p class="footer-note">Acceso exclusivo desde la aplicación instalada</p>
+  <!-- ============================================
+       PANTALLA DE BLOQUEO: SOLO VISIBLE EN WEB
+       ============================================ -->
+  <div class="block-screen hidden" id="blockScreen">
+    <div class="block-grid"></div>
+    <div class="block-glow"></div>
+    <div class="block-particles" id="blockParticles"></div>
+
+    <div class="block-content">
+      <div class="block-icon">
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 20.5c5.2-3.7 8.5-7.4 8.5-11.2A4.8 4.8 0 0 0 15.7 4c-1.6 0-3 .8-3.7 2-0.7-1.2-2.1-2-3.7-2A4.8 4.8 0 0 0 3.5 9.3c0 3.8 3.3 7.5 8.5 11.2Z" stroke="url(#bg)" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+          <defs>
+            <linearGradient id="bg" x1="3.5" y1="4" x2="20.5" y2="20.5" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#ff7aa5"/>
+              <stop offset="1" stop-color="#ffd1df"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="block-line"></div>
+
+      <h1 class="block-title">Debes instalar la aplicacion</h1>
+      <p class="block-subtitle">
+        Este contenido exclusivo solo esta disponible desde la aplicacion instalada. Descargala ahora para comenzar.
+      </p>
+
+      <button class="block-btn" id="blockInstallBtn">
+        Descargar aplicacion
+      </button>
+
+      <div class="block-ios-hint" id="iosHint">
+        <strong>Para iOS:</strong> toca el boton compartir en Safari y selecciona <strong>"Agregar a pantalla de inicio"</strong>.
+      </div>
+
+      <p class="block-hint">
+        La instalacion es rapida y no ocupa espacio en tu dispositivo.
+      </p>
     </div>
+  </div>
 
-    <div id="app-screen" class="hidden">
-        <h2>Tiempo Juntos</h2>
-        <p class="subtitle">Inicio de la relación</p>
+  <div class="overlay" id="overlay">
+    <div class="setup">
+      <h1>Inicio de la relacion</h1>
+      <p>Ingresa la fecha en que comenzo todo. El contador se guardara y seguira avanzando solo.</p>
 
-        <div class="input-group">
-            <input type="text" id="name1" placeholder="Nombre 1" readonly>
-            <input type="text" id="name2" placeholder="Nombre 2" readonly>
-        </div>
-        <div class="input-group">
-            <input type="date" id="startDate" readonly>
-        </div>
+      <div class="field">
+        <label for="name1">Nombre 1</label>
+        <input class="input" id="name1" type="text" placeholder="Tu nombre" autocomplete="off" />
+      </div>
 
-        <div class="actions">
-            <button id="saveBtn" class="btn hidden">Guardar</button>
-            <button id="editBtn" class="btn btn-outline">Editar</button>
-            <button id="clearBtn" class="btn btn-danger">Borrar datos</button>
-        </div>
+      <div class="field">
+        <label for="name2">Nombre 2</label>
+        <input class="input" id="name2" type="text" placeholder="Nombre de la otra persona" autocomplete="off" />
+      </div>
 
-        <div class="counter-box">
-            <span class="live-tag">En vivo</span>
-            <p class="decor">Tiempo juntos - contador romántico</p>
-            <p class="counter-desc">Cada segundo suma, cada minuto queda guardado y cada día cuenta una historia.</p>
-            <div class="values">
-                <span class="value-label">Años</span> <span id="years" class="value-number">0</span>
-                <span class="value-label">Meses</span> <span id="months" class="value-number">0</span>
-                <span class="value-label">Días</span> <span id="days" class="value-number">0</span><br>
-                <span class="value-label">Horas</span> <span id="hours" class="value-number">00</span>
-                <span class="value-label">Minutos</span> <span id="minutes" class="value-number">00</span>
-                <span class="value-label">Segundos</span> <span id="seconds" class="value-number">00</span>
-            </div>
-        </div>
+      <div class="field">
+        <label for="startDate">Fecha de inicio</label>
+        <input class="input" id="startDate" type="date" />
+      </div>
 
-        <p class="date-display">Desde el <span id="display-date">—</span> — Esperando datos...</p>
-        <p class="note">Guardado localmente en este dispositivo.</p>
+      <div class="setup-actions">
+        <button class="btn btn-primary" id="saveBtn">Guardar</button>
+      </div>
+
+      <div class="hint">
+        Se guarda en este mismo dispositivo. Podras editarlo despues.
+      </div>
     </div>
+  </div>
 
-    <script>
-        const isInstalledApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  <main class="shell">
+    <section class="card hidden" id="appCard">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 20.5c5.2-3.7 8.5-7.4 8.5-11.2A4.8 4.8 0 0 0 15.7 4c-1.6 0-3 .8-3.7 2-0.7-1.2-2.1-2-3.7-2A4.8 4.8 0 0 0 3.5 9.3c0 3.8 3.3 7.5 8.5 11.2Z" stroke="url(#g)" stroke-width="1.7" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="g" x1="3.5" y1="4" x2="20.5" y2="20.5" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#ff7aa5"/>
+                  <stop offset="1" stop-color="#ffd1df"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="brand-title">
+            <strong id="titleName">Tiempo juntos</strong>
+            <span id="subtitleName">Contador romantico</span>
+          </div>
+        </div>
 
-        const installScreen = document.getElementById('install-screen');
-        const appScreen = document.getElementById('app-screen');
-        const installBtn = document.getElementById('install-btn');
-        const iosHelp = document.getElementById('ios-help');
+        <div class="status">
+          <span class="status-dot"></span>
+          En vivo
+        </div>
+      </div>
 
-        if (!isInstalledApp) {
-            installScreen.classList.remove('hidden');
-            appScreen.classList.add('hidden');
+      <div class="hero">
+        <div class="symbol-line" aria-hidden="true">
+          <span class="heart"></span>
+          <span class="mini"></span>
+          <span>&bull;</span>
+          <span class="mini"></span>
+          <span>&lowast;</span>
+          <span class="mini"></span>
+          <span>&times;</span>
+          <span class="mini"></span>
+          <span>&bull;</span>
+          <span class="heart"></span>
+        </div>
 
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            if (isIOS) {
-                installBtn.disabled = true;
-                installBtn.textContent = 'Instalación manual en iPhone/iPad';
-                iosHelp.style.display = 'block';
-            }
+        <h2 class="love-title" id="headline">Un detalle para ustedes</h2>
+        <p class="love-subtitle" id="quote">
+          Cada segundo suma, cada minuto queda guardado y cada dia cuenta una historia.
+        </p>
+      </div>
 
-            let deferredPrompt;
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                installBtn.disabled = false;
-            });
+      <div class="counter-wrap">
+        <div class="counter">
+          <div class="tile">
+            <span class="label"><span class="sym">&sext;</span> Anos</span>
+            <div class="value" id="years">0</div>
+          </div>
+          <div class="tile">
+            <span class="label"><span class="sym">&#9676;</span> Meses</span>
+            <div class="value" id="months">0</div>
+          </div>
+          <div class="tile">
+            <span class="label"><span class="sym">&#10043;</span> Dias</span>
+            <div class="value" id="days">0</div>
+          </div>
+          <div class="tile">
+            <span class="label"><span class="sym">&#9672;</span> Horas</span>
+            <div class="value" id="hours">00</div>
+          </div>
+          <div class="tile">
+            <span class="label"><span class="sym">&#10209;</span> Minutos</span>
+            <div class="value" id="minutes">00</div>
+          </div>
+          <div class="tile">
+            <span class="label"><span class="sym">&#10023;</span> Segundos</span>
+            <div class="value" id="seconds">00</div>
+          </div>
+        </div>
 
-            installBtn.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    console.log(`Resultado instalación: ${outcome}`);
-                    deferredPrompt = null;
-                } else {
-                    alert('La instalación automática no está disponible aquí. Usa el menú del navegador y selecciona instalar o agregar a pantalla de inicio.');
-                }
-            });
-        } else {
-            installScreen.classList.add('hidden');
-            appScreen.classList.remove('hidden');
-            initAppLogic();
-        }
+        <div class="info-stack">
+          <div class="info-box" id="detailsBox">
+            Desde el <strong id="startText">&mdash;</strong><br />
+            <span id="fullDetails">Esperando datos...</span>
+          </div>
 
-        function initAppLogic() {
-            const name1In = document.getElementById('name1');
-            const name2In = document.getElementById('name2');
-            const dateIn = document.getElementById('startDate');
-            const saveBtn = document.getElementById('saveBtn');
-            const editBtn = document.getElementById('editBtn');
-            const clearBtn = document.getElementById('clearBtn');
-            const displayDate = document.getElementById('display-date');
+          <div class="button-row">
+            <button class="btn btn-primary" id="editBtn">Editar</button>
+            <button class="btn btn-secondary" id="clearBtn">Borrar datos</button>
+          </div>
 
-            const data = JSON.parse(localStorage.getItem('tiempoJuntos') || '{}');
-            if (data.startDate) {
-                name1In.value = data.name1 || '';
-                name2In.value = data.name2 || '';
-                dateIn.value = data.startDate;
-                displayDate.textContent = new Date(data.startDate).toLocaleDateString();
-                toggleEdit(false);
-                startCounter(data.startDate);
-            }
+          <!-- Boton de instalacion (aparece si el navegador lo soporta) -->
+          <div class="install-btn-wrap hidden" id="installPromptWrap">
+            <button class="btn install-btn" id="installBtn">Instalar en pantalla principal</button>
+          </div>
 
-            function toggleEdit(editing) {
-                [name1In, name2In, dateIn].forEach(i => i.readOnly = !editing);
-                saveBtn.classList.toggle('hidden', !editing);
-                editBtn.classList.toggle('hidden', editing);
-            }
+          <div class="sparkle-line" aria-hidden="true">
+            <span class="spark"></span>
+            <span>&lowast;</span>
+            <span class="spark"></span>
+            <span>&times;</span>
+            <span class="spark"></span>
+          </div>
+        </div>
+      </div>
 
-            editBtn.onclick = () => toggleEdit(true);
+      <div class="footer-note">
+        Guardado localmente en este dispositivo.
+      </div>
+    </section>
+  </main>
 
-            saveBtn.onclick = () => {
-                const newData = { name1: name1In.value, name2: name2In.value, startDate: dateIn.value };
-                localStorage.setItem('tiempoJuntos', JSON.stringify(newData));
-                displayDate.textContent = new Date(newData.startDate).toLocaleDateString();
-                toggleEdit(false);
-                startCounter(newData.startDate);
-            };
+  <script>
+    // ============================================
+    // DETECCION DE MODO STANDALONE
+    // ============================================
+    function isStandalone() {
+      return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true
+      );
+    }
 
-            clearBtn.onclick = () => {
-                if (confirm('¿Estás seguro de borrar todos los datos?')) {
-                    localStorage.removeItem('tiempoJuntos');
-                    location.reload();
-                }
-            };
+    // ============================================
+    // PANTALLA DE BLOQUEO - PARTICULAS
+    // ============================================
+    function initBlockParticles() {
+      const container = document.getElementById('blockParticles');
+      if (!container) return;
+      for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'b-particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (4 + Math.random() * 8) + 's';
+        p.style.animationDelay = (Math.random() * 5) + 's';
+        p.style.width = (2 + Math.random() * 3) + 'px';
+        p.style.height = p.style.width;
+        container.appendChild(p);
+      }
+    }
 
-            let timer;
-            function startCounter(startStr) {
-                if (timer) clearInterval(timer);
-                const start = new Date(startStr + 'T00:00:00');
+    // ============================================
+    // LOGICA DE INSTALACION
+    // ============================================
+    let deferredPrompt = null;
+    const blockScreen = document.getElementById('blockScreen');
+    const blockInstallBtn = document.getElementById('blockInstallBtn');
+    const iosHint = document.getElementById('iosHint');
 
-                const update = () => {
-                    const now = new Date();
-                    let diff = Math.max(0, now - start);
+    // Capturar evento beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
 
-                    const sec = Math.floor(diff / 1000);
-                    const min = Math.floor(sec / 60);
-                    const hr = Math.floor(min / 60);
-                    const day = Math.floor(hr / 24);
+    // Detectar iOS
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
 
-                    const years = Math.floor(day / 365.25);
-                    const remDaysY = day - Math.floor(years * 365.25);
-                    const months = Math.floor(remDaysY / 30.44);
-                    const days = Math.floor(remDaysY - months * 30.44);
+    // Mostrar pantalla de bloqueo si NO es standalone
+    if (!isStandalone()) {
+      blockScreen.classList.remove('hidden');
+      initBlockParticles();
 
-                    document.getElementById('years').textContent = years;
-                    document.getElementById('months').textContent = months;
-                    document.getElementById('days').textContent = days;
-                    document.getElementById('hours').textContent = String(hr % 24).padStart(2, '0');
-                    document.getElementById('minutes').textContent = String(min % 60).padStart(2, '0');
-                    document.getElementById('seconds').textContent = String(sec % 60).padStart(2, '0');
-                };
+      // En iOS mostrar hint especial
+      if (isIOS()) {
+        iosHint.style.display = 'block';
+        blockInstallBtn.textContent = 'Ver instrucciones';
+      }
+    }
 
-                update();
-                timer = setInterval(update, 1000);
-            }
-        }
+    // Boton de instalacion en pantalla de bloqueo
+    blockInstallBtn.addEventListener('click', async () => {
+      if (isIOS()) {
+        // En iOS, mostrar/ocultar hint
+        iosHint.style.display = iosHint.style.display === 'block' ? 'none' : 'block';
+        return;
+      }
 
-        if ('serviceWorker' in navigator) {
-            const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => e.waitUntil(self.clients.claim())); self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`;
-            const swBlob = new Blob([swCode], { type: 'application/javascript' });
-            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.error);
+      if (!deferredPrompt) {
+        // Si no hay prompt disponible, intentar recargar o mostrar mensaje
+        alert('Tu navegador no soporta instalacion automatica. Usa el menu del navegador para instalar la app.');
+        return;
+      }
 
-            const manifest = {
-                name: "Tiempo Juntos",
-                short_name: "Tiempo",
-                start_url: "./",
-                display: "standalone",
-                background_color: "#050816",
-                theme_color: "#08111f",
-                icons: [{
-                    src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2308111f'/><path d='M50 16c-7 0-13 6-13 13 0 17 13 25 13 25s13-8 13-25c0-7-6-13-13-13zm0 6c4 0 7 3 7 7 0 10-7 17-7 17s-7-7-7-17c0-4 3-7 7-7z' fill='%2362d0ff'/></svg>",
-                    sizes: "192x192",
-                    type: "image/svg+xml"
-                }]
-            };
-            const mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-            const link = document.createElement('link');
-            link.rel = 'manifest';
-            link.href = URL.createObjectURL(mBlob);
-            document.head.appendChild(link);
-        }
-    </script>
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        deferredPrompt = null;
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      // Ocultar pantalla de bloqueo despues de instalar
+      blockScreen.classList.add('hidden');
+    });
+
+    // ============================================
+    // 1. Registro dinamico del Service Worker
+    // ============================================
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        const CACHE_NAME = 'tiempo-juntos-v2';
+        const ASSETS = [self.location.href];
+
+        self.addEventListener('install', event => {
+          event.waitUntil(
+            caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+          );
+          self.skipWaiting();
+        });
+
+        self.addEventListener('activate', event => {
+          event.waitUntil(
+            caches.keys().then(keys =>
+              Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+            )
+          );
+          self.clients.claim();
+        });
+
+        self.addEventListener('fetch', event => {
+          event.respondWith(
+            caches.match(event.request).then(cached => cached || fetch(event.request))
+          );
+        });
+      `;
+      const swBlob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    }
+
+    // ============================================
+    // 2. Generacion dinamica del manifest (PWA)
+    // ============================================
+    function createManifest() {
+      const manifest = {
+        name: 'Tiempo Juntos',
+        short_name: 'Juntos',
+        description: 'Contador romantico de tiempo compartido',
+        start_url: location.href,
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#050507',
+        theme_color: '#0b0b10',
+        icons: [{
+          src: 'data:image/svg+xml,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><linearGradient id="g" x1="3.5" y1="4" x2="20.5" y2="20.5"><stop stop-color="#ff7aa5"/><stop offset="1" stop-color="#ffd1df"/></linearGradient></defs><path fill="url(#g)" d="M12 20.5c5.2-3.7 8.5-7.4 8.5-11.2A4.8 4.8 0 0 0 15.7 4c-1.6 0-3 .8-3.7 2-0.7-1.2-2.1-2-3.7-2A4.8 4.8 0 0 0 3.5 9.3c0 3.8 3.3 7.5 8.5 11.2Z"/></svg>'
+          ),
+          sizes: '192x192',
+          type: 'image/svg+xml',
+          purpose: 'any maskable'
+        }]
+      };
+
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      const manifestUrl = URL.createObjectURL(blob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = manifestUrl;
+      document.head.appendChild(link);
+    }
+
+    createManifest();
+
+    // ============================================
+    // 3. Logica de instalacion (boton "Instalar")
+    // ============================================
+    const installWrap = document.getElementById('installPromptWrap');
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installWrap.classList.remove('hidden');
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        installWrap.classList.add('hidden');
+        deferredPrompt = null;
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installWrap.classList.add('hidden');
+      deferredPrompt = null;
+    });
+
+    // ============================================
+    // 4. Contador y datos (ya existente)
+    // ============================================
+    const STORAGE_KEY = "love_counter_data_v2";
+
+    const overlay = document.getElementById("overlay");
+    const appCard = document.getElementById("appCard");
+    const saveBtn = document.getElementById("saveBtn");
+    const editBtn = document.getElementById("editBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const name1Input = document.getElementById("name1");
+    const name2Input = document.getElementById("name2");
+    const startDateInput = document.getElementById("startDate");
+
+    const titleName = document.getElementById("titleName");
+    const subtitleName = document.getElementById("subtitleName");
+    const headline = document.getElementById("headline");
+    const quote = document.getElementById("quote");
+
+    const yearsEl = document.getElementById("years");
+    const monthsEl = document.getElementById("months");
+    const daysEl = document.getElementById("days");
+    const hoursEl = document.getElementById("hours");
+    const minutesEl = document.getElementById("minutes");
+    const secondsEl = document.getElementById("seconds");
+    const startText = document.getElementById("startText");
+    const fullDetails = document.getElementById("fullDetails");
+
+    let data = loadData();
+    let updateTimer = null;
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveData(payload) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function pad(n) {
+      return String(n).padStart(2, "0");
+    }
+
+    function formatDateLong(date) {
+      return date.toLocaleDateString("es-PE", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    }
+
+    function getExactDiff(start, end) {
+      const s = new Date(start);
+      const e = new Date(end);
+
+      let years = e.getFullYear() - s.getFullYear();
+      let months = e.getMonth() - s.getMonth();
+      let days = e.getDate() - s.getDate();
+      let hours = e.getHours() - s.getHours();
+      let minutes = e.getMinutes() - s.getMinutes();
+      let seconds = e.getSeconds() - s.getSeconds();
+
+      if (seconds < 0) { seconds += 60; minutes--; }
+      if (minutes < 0) { minutes += 60; hours--; }
+      if (hours < 0) { hours += 24; days--; }
+
+      if (days < 0) {
+        const prevMonth = new Date(e.getFullYear(), e.getMonth(), 0).getDate();
+        days += prevMonth;
+        months--;
+      }
+
+      if (months < 0) {
+        months += 12;
+        years--;
+      }
+
+      return { years, months, days, hours, minutes, seconds };
+    }
+
+    function updateUI() {
+      if (!data || !data.startDate) return;
+
+      const start = new Date(data.startDate + "T00:00:00");
+      const now = new Date();
+      const diff = getExactDiff(start, now);
+      const totalMs = now - start;
+      const totalDays = Math.floor(totalMs / (1000 * 60 * 60 * 24));
+
+      yearsEl.textContent = diff.years;
+      monthsEl.textContent = diff.months;
+      daysEl.textContent = diff.days;
+      hoursEl.textContent = pad(diff.hours);
+      minutesEl.textContent = pad(diff.minutes);
+      secondsEl.textContent = pad(diff.seconds);
+
+      const a = data.name1?.trim() || "persona 1";
+      const b = data.name2?.trim() || "persona 2";
+
+      titleName.textContent = data.name2?.trim() ? `Un gran amor` : "Tiempo juntos";
+      subtitleName.textContent = data.name2?.trim() ? `${a} y ${b}` : "Contador romantico";
+      headline.textContent = data.name2?.trim() ? `Tiempo juntos, ${a} y ${b}` : "Un detalle para ustedes";
+      quote.textContent = data.name2?.trim()
+        ? "Cada segundo suma, cada minuto queda guardado y cada dia cuenta una historia."
+        : "Cada segundo suma, cada minuto queda guardado y cada dia cuenta una historia.";
+
+      startText.textContent = formatDateLong(start);
+      fullDetails.textContent = `Han pasado ${diff.years} anos, ${diff.months} meses, ${diff.days} dias, ${diff.hours} horas, ${diff.minutes} minutos y ${diff.seconds} segundos. Total aproximado: ${totalDays} dias.`;
+
+      appCard.classList.remove("hidden");
+    }
+
+    function openSetup(prefill = true) {
+      overlay.classList.remove("hidden");
+      appCard.classList.add("hidden");
+
+      if (prefill && data) {
+        name1Input.value = data.name1 || "";
+        name2Input.value = data.name2 || "";
+        startDateInput.value = data.startDate || "";
+      } else {
+        name1Input.value = "";
+        name2Input.value = "";
+        startDateInput.value = "";
+      }
+    }
+
+    function closeSetup() {
+      overlay.classList.add("hidden");
+      appCard.classList.remove("hidden");
+    }
+
+    function validateAndSave() {
+      const startDate = startDateInput.value;
+      const name1 = name1Input.value.trim();
+      const name2 = name2Input.value.trim();
+
+      if (!startDate) {
+        alert("Selecciona una fecha valida.");
+        return;
+      }
+
+      const chosen = new Date(startDate + "T00:00:00");
+      const today = new Date();
+      const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+
+      if (chosen > todayMidnight) {
+        alert("La fecha no puede ser futura.");
+        return;
+      }
+
+      data = { name1, name2, startDate };
+      saveData(data);
+      closeSetup();
+      updateUI();
+
+      if (updateTimer) clearInterval(updateTimer);
+      updateTimer = setInterval(updateUI, 1000);
+    }
+
+    saveBtn.addEventListener("click", validateAndSave);
+    editBtn.addEventListener("click", () => openSetup(true));
+    clearBtn.addEventListener("click", () => {
+      const ok = confirm("Borrar los datos guardados?");
+      if (!ok) return;
+      localStorage.removeItem(STORAGE_KEY);
+      data = null;
+      if (updateTimer) clearInterval(updateTimer);
+      openSetup(false);
+    });
+
+    // Solo inicializar la app si estamos en modo standalone
+    if (isStandalone()) {
+      if (data && data.startDate) {
+        closeSetup();
+        updateUI();
+        updateTimer = setInterval(updateUI, 1000);
+      } else {
+        openSetup(false);
+      }
+    }
+
+    // ============================================
+    // 5. Luciernagas (canvas)
+    // ============================================
+    const canvas = document.getElementById("fireflies");
+    const ctx = canvas.getContext("2d");
+    let w = 0, h = 0, fireflies = [];
+
+    function resize() {
+      w = canvas.width = window.innerWidth * devicePixelRatio;
+      h = canvas.height = window.innerHeight * devicePixelRatio;
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      initFireflies();
+    }
+
+    function initFireflies() {
+      const count = Math.max(44, Math.min(96, Math.floor(window.innerWidth / 7)));
+      fireflies = Array.from({ length: count }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: (Math.random() * 1.8 + 0.8) * devicePixelRatio,
+        vx: (Math.random() - 0.5) * 0.22 * devicePixelRatio,
+        vy: (Math.random() - 0.5) * 0.22 * devicePixelRatio,
+        glow: Math.random() * Math.PI * 2,
+        pulse: 0.6 + Math.random() * 0.8
+      }));
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+
+      for (const f of fireflies) {
+        f.x += f.vx;
+        f.y += f.vy;
+        f.glow += 0.02 * f.pulse;
+
+        if (f.x < -20 * devicePixelRatio) f.x = w + 20 * devicePixelRatio;
+        if (f.x > w + 20 * devicePixelRatio) f.x = -20 * devicePixelRatio;
+        if (f.y < -20 * devicePixelRatio) f.y = h + 20 * devicePixelRatio;
+        if (f.y > h + 20 * devicePixelRatio) f.y = -20 * devicePixelRatio;
+
+        const alpha = 0.22 + Math.abs(Math.sin(f.glow)) * 0.78;
+        const size = f.r * (0.7 + Math.abs(Math.sin(f.glow)) * 0.9);
+
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.shadowBlur = 20 * devicePixelRatio;
+        ctx.shadowColor = "rgba(255,255,255,0.46)";
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener("resize", resize, { passive: true });
+    resize();
+    draw();
+
+    document.querySelectorAll(".input").forEach(el => {
+      el.addEventListener("keydown", e => {
+        if (e.key === "Enter") validateAndSave();
+      });
+    });
+  </script>
 </body>
 </html>
