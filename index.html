@@ -3,60 +3,413 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#ff4081">
+    <meta name="theme-color" content="#08111f">
     <title>Tiempo Juntos</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background: #f8f9fa; color: #333; text-align: center; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        
-        .hidden { display: none !important; }
-        
-        /* Pantalla de instalación (Web) */
-        #install-screen { background: #fff; padding: 30px 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 400px; width: 100%; }
-        #install-screen h1 { color: #ff4081; margin-bottom: 15px; font-size: 1.8rem; }
-        #install-screen p { color: #666; margin-bottom: 20px; line-height: 1.5; }
-        .install-btn { background: linear-gradient(135deg, #ff4081, #ff80ab); color: white; border: none; padding: 16px; font-size: 1rem; font-weight: 600; border-radius: 50px; cursor: pointer; width: 100%; transition: transform 0.2s; }
-        .install-btn:active { transform: scale(0.98); }
-        .install-btn:disabled { background: #ccc; cursor: not-allowed; }
-        .ios-hint { background: #fff3cd; color: #856404; padding: 12px; border-radius: 10px; margin-top: 15px; font-size: 0.9rem; display: none; }
-        .footer-note { font-size: 0.75rem; color: #999; margin-top: 15px; }
+        :root{
+            --bg: #050816;
+            --panel: rgba(10, 18, 35, 0.72);
+            --panel-strong: rgba(14, 24, 46, 0.92);
+            --line: rgba(120, 181, 255, 0.18);
+            --text: #eaf2ff;
+            --muted: #95a6c8;
+            --accent: #62d0ff;
+            --accent-2: #8f7bff;
+            --danger: #ff5b78;
+            --success: #54efc3;
+            --shadow: 0 20px 80px rgba(0,0,0,0.45);
+            --radius: 24px;
+        }
 
-        /* Pantalla de la App (Instalada) */
-        #app-screen { max-width: 400px; width: 100%; background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h2 { color: #ff4081; margin-bottom: 5px; }
-        .subtitle { font-size: 0.85rem; color: #777; margin-bottom: 15px; }
-        .input-group { margin: 12px 0; display: flex; gap: 10px; justify-content: center; }
-        input { padding: 12px; width: 100%; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; background: #fafafa; }
-        input:read-only { background: #eee; color: #555; }
-        .btn { padding: 12px 20px; background: #ff4081; color: white; border: none; border-radius: 10px; font-weight: 500; cursor: pointer; }
-        .btn-outline { background: transparent; border: 1px solid #ff4081; color: #ff4081; }
-        .btn-danger { background: #dc3545; }
-        .actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
-        
-        .counter-box { margin: 20px 0; padding: 15px; background: linear-gradient(to bottom, #fff5f7, #fff); border-radius: 15px; border: 1px solid #ffe0e6; }
-        .decor { color: #ff4081; font-weight: bold; }
-        .live-tag { background: #ff4081; color: white; padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; display: inline-block; margin-bottom: 5px; }
-        .date-display { font-size: 0.85rem; color: #888; margin: 10px 0; }
-        .values { font-size: 1.1rem; line-height: 2.2; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        html, body {
+            min-height: 100%;
+        }
+
+        body {
+            color: var(--text);
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow-x: hidden;
+            background:
+                radial-gradient(circle at top, rgba(98,208,255,0.12), transparent 34%),
+                radial-gradient(circle at bottom right, rgba(143,123,255,0.16), transparent 28%),
+                linear-gradient(135deg, #04060f 0%, #071326 42%, #050816 100%);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 34px 34px;
+            mask-image: radial-gradient(circle at center, black 38%, transparent 100%);
+            opacity: 0.35;
+        }
+
+        .hidden { display: none !important; }
+
+        #install-screen,
+        #app-screen {
+            width: 100%;
+            max-width: 460px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+            animation: fadeInUp 0.7s ease both;
+        }
+
+        #install-screen {
+            background: linear-gradient(180deg, rgba(12, 21, 41, 0.88), rgba(8, 14, 28, 0.96));
+            padding: 34px 24px 28px;
+            border-radius: var(--radius);
+        }
+
+        #app-screen {
+            background: linear-gradient(180deg, rgba(12, 21, 41, 0.78), rgba(8, 14, 28, 0.92));
+            padding: 28px 24px;
+            border-radius: var(--radius);
+        }
+
+        #install-screen::after,
+        #app-screen::after {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(135deg, rgba(98,208,255,0.35), rgba(143,123,255,0.2), rgba(84,239,195,0.16));
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0.55;
+        }
+
+        h1, h2 {
+            letter-spacing: 0.4px;
+            line-height: 1.1;
+        }
+
+        #install-screen h1 {
+            margin-bottom: 12px;
+            font-size: clamp(1.7rem, 4vw, 2.1rem);
+            color: var(--text);
+            text-shadow: 0 0 18px rgba(98,208,255,0.15);
+        }
+
+        #install-screen p {
+            color: var(--muted);
+            margin-bottom: 20px;
+            line-height: 1.6;
+            font-size: 0.98rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            margin-bottom: 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(98,208,255,0.24);
+            background: rgba(98,208,255,0.08);
+            color: var(--accent);
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            animation: pulseGlow 2.4s ease-in-out infinite;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 16px rgba(98,208,255,0.8);
+        }
+
+        .install-btn {
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            padding: 16px 18px;
+            border-radius: 16px;
+            color: #06101d;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            background: linear-gradient(135deg, #7ae7ff 0%, #8f7bff 100%);
+            box-shadow: 0 14px 40px rgba(98,208,255,0.22);
+            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .install-btn::before,
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 120%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: skewX(-22deg);
+            transition: left 0.7s ease;
+        }
+
+        .install-btn:hover::before,
+        .btn:hover::before {
+            left: 120%;
+        }
+
+        .install-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 48px rgba(98,208,255,0.28);
+        }
+
+        .install-btn:active {
+            transform: scale(0.98);
+        }
+
+        .install-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            box-shadow: none;
+            filter: grayscale(0.2);
+        }
+
+        .ios-hint {
+            display: none;
+            margin-top: 16px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(84,239,195,0.18);
+            background: rgba(84,239,195,0.08);
+            color: #bff7ea;
+            line-height: 1.55;
+            font-size: 0.92rem;
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            font-size: 0.76rem;
+            color: rgba(149,166,200,0.78);
+            letter-spacing: 0.03em;
+        }
+
+        h2 {
+            color: var(--text);
+            margin-bottom: 6px;
+            font-size: clamp(1.45rem, 3.5vw, 1.8rem);
+        }
+
+        .subtitle {
+            font-size: 0.86rem;
+            color: var(--muted);
+            margin-bottom: 18px;
+        }
+
+        .input-group {
+            margin: 12px 0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        input {
+            padding: 13px 14px;
+            width: 100%;
+            border: 1px solid rgba(98,208,255,0.12);
+            border-radius: 14px;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+        }
+
+        input::placeholder { color: rgba(149,166,200,0.72); }
+
+        input:focus {
+            border-color: rgba(98,208,255,0.45);
+            box-shadow: 0 0 0 3px rgba(98,208,255,0.12);
+        }
+
+        input:read-only {
+            background: rgba(255,255,255,0.03);
+            color: rgba(234,242,255,0.92);
+        }
+
+        .btn {
+            position: relative;
+            overflow: hidden;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease, background .18s ease;
+            color: #06101d;
+            background: linear-gradient(135deg, #7ae7ff 0%, #8f7bff 100%);
+            box-shadow: 0 12px 32px rgba(98,208,255,0.16);
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: scale(0.985); }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid rgba(98,208,255,0.35);
+            box-shadow: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff758c 0%, #ff5b78 100%);
+            color: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .counter-box {
+            margin: 20px 0 8px;
+            padding: 16px 16px 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border-radius: 18px;
+            border: 1px solid rgba(98,208,255,0.12);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+            position: relative;
+        }
+
+        .counter-box::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top, rgba(98,208,255,0.1), transparent 45%);
+            pointer-events: none;
+        }
+
+        .live-tag {
+            display: inline-block;
+            margin-bottom: 8px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(84,239,195,0.12);
+            color: var(--success);
+            font-size: 0.72rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            border: 1px solid rgba(84,239,195,0.22);
+        }
+
+        .decor {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .counter-desc {
+            font-size: 0.9rem;
+            margin: 10px 0 16px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .values {
+            font-size: 1.08rem;
+            line-height: 2.25;
+            color: var(--text);
+        }
+
+        .value-label {
+            color: var(--muted);
+        }
+
+        .value-number {
+            color: var(--accent);
+            font-weight: 800;
+            text-shadow: 0 0 18px rgba(98,208,255,0.18);
+        }
+
+        .date-display {
+            font-size: 0.88rem;
+            color: var(--muted);
+            margin: 12px 0 4px;
+        }
+
+        .note {
+            font-size: 0.75rem;
+            color: rgba(149,166,200,0.8);
+            margin-top: 14px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(0.98);
+                filter: blur(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 rgba(98,208,255,0); transform: translateY(0); }
+            50% { box-shadow: 0 0 24px rgba(98,208,255,0.14); transform: translateY(-1px); }
+        }
+
+        @media (max-width: 420px) {
+            body { padding: 16px; }
+            #install-screen, #app-screen { padding-left: 18px; padding-right: 18px; border-radius: 22px; }
+            .input-group { flex-direction: column; }
+            .actions { gap: 8px; }
+            .btn { width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- VISTA WEB: Bloqueada hasta instalar -->
     <div id="install-screen">
-        <h1>📲 Debes instalar la aplicación</h1>
-        <p>Para proteger tus datos y garantizar el funcionamiento en tiempo real, esta herramienta solo está disponible cuando se instala como aplicación.</p>
-        <button id="install-btn" class="install-btn" disabled>Descargar e Instalar Aplicación</button>
-        <div id="ios-help" class="ios-hint">            🍎 <strong>En iPhone/iPad:</strong> Toca el botón compartir <span style="font-size:1.2em">⬆️</span> y selecciona <em>"Agregar a Inicio"</em>.
+        <div class="status-pill"><span class="status-dot"></span> acceso web deshabilitado</div>
+        <h1>Debes instalar la aplicación</h1>
+        <p>Para continuar, instala la aplicación en tu dispositivo. Desde la página solo verás este aviso; la funcionalidad completa estará disponible únicamente en la aplicación instalada.</p>
+        <button id="install-btn" class="install-btn" disabled>Instalar aplicación</button>
+        <div id="ios-help" class="ios-hint">
+            En iPhone o iPad, abre el menú de compartir y elige la opción para agregar a la pantalla de inicio.
         </div>
-        <p class="footer-note">Guardado local seguro • Sin conexión • 100% Privado</p>
+        <p class="footer-note">Acceso exclusivo desde la aplicación instalada</p>
     </div>
 
-    <!-- VISTA APP: Funcional solo cuando está instalada -->
     <div id="app-screen" class="hidden">
         <h2>Tiempo Juntos</h2>
         <p class="subtitle">Inicio de la relación</p>
-        
+
         <div class="input-group">
             <input type="text" id="name1" placeholder="Nombre 1" readonly>
             <input type="text" id="name2" placeholder="Nombre 2" readonly>
@@ -64,7 +417,7 @@
         <div class="input-group">
             <input type="date" id="startDate" readonly>
         </div>
-        
+
         <div class="actions">
             <button id="saveBtn" class="btn hidden">Guardar</button>
             <button id="editBtn" class="btn btn-outline">Editar</button>
@@ -73,43 +426,41 @@
 
         <div class="counter-box">
             <span class="live-tag">En vivo</span>
-            <p class="decor">•⋆⋇• Tiempo juntos • Contador romántico</p>
-            <p style="font-size:0.9rem; margin: 10px 0;">Cada segundo suma, cada minuto queda guardado y cada día cuenta una historia.</p>
+            <p class="decor">Tiempo juntos - contador romántico</p>
+            <p class="counter-desc">Cada segundo suma, cada minuto queda guardado y cada día cuenta una historia.</p>
             <div class="values">
-                <span class="decor">✦</span> Años <span id="years">0</span> 
-                <span class="decor">◌</span> Meses <span id="months">0</span> 
-                <span class="decor">❋</span> Días <span id="days">0</span><br>
-                <span class="decor">◈</span> Horas <span id="hours">00</span> 
-                <span class="decor">⟡</span> Minutos <span id="minutes">00</span> 
-                <span class="decor">✧</span> Segundos <span id="seconds">00</span>
+                <span class="value-label">Años</span> <span id="years" class="value-number">0</span>
+                <span class="value-label">Meses</span> <span id="months" class="value-number">0</span>
+                <span class="value-label">Días</span> <span id="days" class="value-number">0</span><br>
+                <span class="value-label">Horas</span> <span id="hours" class="value-number">00</span>
+                <span class="value-label">Minutos</span> <span id="minutes" class="value-number">00</span>
+                <span class="value-label">Segundos</span> <span id="seconds" class="value-number">00</span>
             </div>
         </div>
 
         <p class="date-display">Desde el <span id="display-date">—</span> — Esperando datos...</p>
-        <p style="font-size: 0.75rem; color: #999; margin-top: 15px;">📲 Guardado localmente en este dispositivo.</p>
+        <p class="note">Guardado localmente en este dispositivo.</p>
     </div>
 
     <script>
-        // 1. DETECCIÓN: ¿Está instalada como app o se ve en navegador?
         const isInstalledApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
         const installScreen = document.getElementById('install-screen');
         const appScreen = document.getElementById('app-screen');
         const installBtn = document.getElementById('install-btn');
         const iosHelp = document.getElementById('ios-help');
+
         if (!isInstalledApp) {
-            // MODO NAVEGADOR: Bloquear app, mostrar instalación
             installScreen.classList.remove('hidden');
             appScreen.classList.add('hidden');
-            
+
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             if (isIOS) {
                 installBtn.disabled = true;
-                installBtn.textContent = 'iOS requiere instalación manual';
+                installBtn.textContent = 'Instalación manual en iPhone/iPad';
                 iosHelp.style.display = 'block';
             }
 
-            // Capturar evento de instalación PWA
             let deferredPrompt;
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
@@ -124,17 +475,15 @@
                     console.log(`Resultado instalación: ${outcome}`);
                     deferredPrompt = null;
                 } else {
-                    alert('La instalación automática no está disponible aquí. Usa el menú del navegador (⋮ o ⬆️) y selecciona "Instalar aplicación" o "Agregar a pantalla de inicio".');
+                    alert('La instalación automática no está disponible aquí. Usa el menú del navegador y selecciona instalar o agregar a pantalla de inicio.');
                 }
             });
         } else {
-            // MODO APP INSTALADA: Mostrar interfaz y activar lógica
             installScreen.classList.add('hidden');
             appScreen.classList.remove('hidden');
             initAppLogic();
         }
 
-        // 2. LÓGICA DE LA APP (Solo se ejecuta si está instalada)
         function initAppLogic() {
             const name1In = document.getElementById('name1');
             const name2In = document.getElementById('name2');
@@ -144,8 +493,8 @@
             const clearBtn = document.getElementById('clearBtn');
             const displayDate = document.getElementById('display-date');
 
-            // Cargar datos
-            const data = JSON.parse(localStorage.getItem('tiempoJuntos') || '{}');            if (data.startDate) {
+            const data = JSON.parse(localStorage.getItem('tiempoJuntos') || '{}');
+            if (data.startDate) {
                 name1In.value = data.name1 || '';
                 name2In.value = data.name2 || '';
                 dateIn.value = data.startDate;
@@ -161,7 +510,7 @@
             }
 
             editBtn.onclick = () => toggleEdit(true);
-            
+
             saveBtn.onclick = () => {
                 const newData = { name1: name1In.value, name2: name2In.value, startDate: dateIn.value };
                 localStorage.setItem('tiempoJuntos', JSON.stringify(newData));
@@ -181,20 +530,21 @@
             function startCounter(startStr) {
                 if (timer) clearInterval(timer);
                 const start = new Date(startStr + 'T00:00:00');
-                
+
                 const update = () => {
                     const now = new Date();
                     let diff = Math.max(0, now - start);
-                    
+
                     const sec = Math.floor(diff / 1000);
                     const min = Math.floor(sec / 60);
                     const hr = Math.floor(min / 60);
                     const day = Math.floor(hr / 24);
-                    
+
                     const years = Math.floor(day / 365.25);
                     const remDaysY = day - Math.floor(years * 365.25);
                     const months = Math.floor(remDaysY / 30.44);
-                    const days = Math.floor(remDaysY - months * 30.44);                    
+                    const days = Math.floor(remDaysY - months * 30.44);
+
                     document.getElementById('years').textContent = years;
                     document.getElementById('months').textContent = months;
                     document.getElementById('days').textContent = days;
@@ -202,27 +552,34 @@
                     document.getElementById('minutes').textContent = String(min % 60).padStart(2, '0');
                     document.getElementById('seconds').textContent = String(sec % 60).padStart(2, '0');
                 };
-                
+
                 update();
                 timer = setInterval(update, 1000);
             }
         }
 
-        // 3. REGISTRO DE SERVICE WORKER & MANIFEST (Necesario para PWA)
         if ('serviceWorker' in navigator) {
-            // SW mínimo inline
             const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => e.waitUntil(self.clients.claim())); self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`;
-            const swBlob = new Blob([swCode], {type: 'application/javascript'});
+            const swBlob = new Blob([swCode], { type: 'application/javascript' });
             navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.error);
-            
-            // Manifest inline dinámico
+
             const manifest = {
-                name: "Tiempo Juntos", short_name: "Tiempo", start_url: "./", display: "standalone",
-                background_color: "#f8f9fa", theme_color: "#ff4081",
-                icons: [{ src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💕</text></svg>", sizes: "192x192", type: "image/svg+xml" }]
+                name: "Tiempo Juntos",
+                short_name: "Tiempo",
+                start_url: "./",
+                display: "standalone",
+                background_color: "#050816",
+                theme_color: "#08111f",
+                icons: [{
+                    src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2308111f'/><path d='M50 16c-7 0-13 6-13 13 0 17 13 25 13 25s13-8 13-25c0-7-6-13-13-13zm0 6c4 0 7 3 7 7 0 10-7 17-7 17s-7-7-7-17c0-4 3-7 7-7z' fill='%2362d0ff'/></svg>",
+                    sizes: "192x192",
+                    type: "image/svg+xml"
+                }]
             };
-            const mBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-            const link = document.createElement('link'); link.rel = 'manifest'; link.href = URL.createObjectURL(mBlob);
+            const mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = URL.createObjectURL(mBlob);
             document.head.appendChild(link);
         }
     </script>
