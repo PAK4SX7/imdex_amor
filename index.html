@@ -1,916 +1,230 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <title>Tiempo Juntos</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff4081">
+    <title>Tiempo Juntos</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background: #f8f9fa; color: #333; text-align: center; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        
+        .hidden { display: none !important; }
+        
+        /* Pantalla de instalación (Web) */
+        #install-screen { background: #fff; padding: 30px 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 400px; width: 100%; }
+        #install-screen h1 { color: #ff4081; margin-bottom: 15px; font-size: 1.8rem; }
+        #install-screen p { color: #666; margin-bottom: 20px; line-height: 1.5; }
+        .install-btn { background: linear-gradient(135deg, #ff4081, #ff80ab); color: white; border: none; padding: 16px; font-size: 1rem; font-weight: 600; border-radius: 50px; cursor: pointer; width: 100%; transition: transform 0.2s; }
+        .install-btn:active { transform: scale(0.98); }
+        .install-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .ios-hint { background: #fff3cd; color: #856404; padding: 12px; border-radius: 10px; margin-top: 15px; font-size: 0.9rem; display: none; }
+        .footer-note { font-size: 0.75rem; color: #999; margin-top: 15px; }
 
-  <!-- PWA: full screen sin barra de navegador -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Tiempo Juntos" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#0b0b10" />
-  <meta name="description" content="Contador romántico de tiempo juntos" />
-
-  <!-- Icono touch para iOS (se genera dinámicamente, pero dejamos fallback) -->
-  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff5e8d' d='M12 20.5c5.2-3.7 8.5-7.4 8.5-11.2A4.8 4.8 0 0 0 15.7 4c-1.6 0-3 .8-3.7 2-0.7-1.2-2.1-2-3.7-2A4.8 4.8 0 0 0 3.5 9.3c0 3.8 3.3 7.5 8.5 11.2Z'/%3E%3C/svg%3E" />
-
-  <style>
-    :root{
-      --bg1:#050507;
-      --bg2:#0d0d16;
-      --card:rgba(255,255,255,.08);
-      --card2:rgba(255,255,255,.12);
-      --line:rgba(255,255,255,.11);
-      --text:#f7f7fb;
-      --muted:rgba(247,247,251,.68);
-      --accent:#ff5e8d;
-      --accent2:#ff9ab8;
-      --accent3:#ffd8e4;
-      --glow:0 0 24px rgba(255,94,141,.22);
-      --shadow:0 24px 60px rgba(0,0,0,.48);
-    }
-
-    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    html,body{
-      width:100%; height:100%; margin:0; overflow:hidden;
-      background:
-        radial-gradient(circle at top, #1a1a2a 0%, #0b0b10 50%, #050507 100%);
-      color:var(--text);
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      /* Evita selección de texto no deseada en modo app */
-      -webkit-user-select:none; user-select:none;
-    }
-
-    body{
-      min-height:100dvh;
-      min-height:100vh;
-      padding:max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
-              max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-      display:grid;
-      place-items:center;
-      position:relative;
-    }
-
-    canvas#fireflies{
-      position:fixed; inset:0;
-      width:100%; height:100%;
-      pointer-events:none; z-index:0;
-    }
-
-    .ambient{
-      position:fixed; inset:0; z-index:0; pointer-events:none;
-      background:
-        radial-gradient(circle at 18% 18%, rgba(255,94,141,.12), transparent 22%),
-        radial-gradient(circle at 82% 28%, rgba(255,216,228,.10), transparent 20%),
-        radial-gradient(circle at 52% 82%, rgba(255,255,255,.05), transparent 32%);
-      filter: blur(16px);
-    }
-
-    .shell{ width:min(100%, 430px); position:relative; z-index:2; }
-
-    .card{
-      width:100%;
-      border-radius:32px;
-      border:1px solid var(--line);
-      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      animation: rise .7s ease both;
-    }
-
-    @keyframes rise{
-      from{ opacity:0; transform:translateY(18px) scale(.985); }
-      to{ opacity:1; transform:translateY(0) scale(1); }
-    }
-
-    .topbar{
-      display:flex; justify-content:space-between; align-items:center; gap:12px;
-      padding:18px 18px 0 18px;
-    }
-
-    .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
-    .brand-mark{
-      width:42px; height:42px; border-radius:15px;
-      display:grid; place-items:center;
-      background:linear-gradient(135deg, rgba(255,94,141,.28), rgba(255,216,228,.16));
-      border:1px solid rgba(255,255,255,.13);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), var(--glow);
-      flex:0 0 auto;
-    }
-
-    .brand-title{ display:flex; flex-direction:column; min-width:0; }
-    .brand-title strong{
-      font-size:.98rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .brand-title span{ font-size:.8rem; color:var(--muted); }
-
-    .status{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 12px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.06);
-      color:var(--accent3);
-      font-size:.82rem;
-      flex:0 0 auto;
-    }
-    .status-dot{
-      width:9px; height:9px; border-radius:50%;
-      background:#66ffad; box-shadow:0 0 16px rgba(102,255,173,.85);
-      animation: dot 1.8s infinite ease-in-out;
-    }
-    @keyframes dot{
-      0%,100%{ transform:scale(1); opacity:.85; }
-      50%{ transform:scale(1.35); opacity:1; }
-    }
-
-    .hero{
-      padding:14px 18px 0 18px;
-      text-align:center;
-    }
-
-    .symbol-line{
-      display:flex; align-items:center; justify-content:center; gap:10px;
-      margin:8px auto 10px;
-      padding:8px 14px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.09);
-      background:rgba(255,255,255,.05);
-      flex-wrap:wrap;
-    }
-
-    .mini{
-      width:8px; height:8px; border-radius:50%;
-      background:#fff; opacity:.88; box-shadow:0 0 12px rgba(255,255,255,.8);
-      animation: twinkle 1.7s infinite ease-in-out;
-    }
-    .mini:nth-child(2){ animation-delay:.18s; }
-    .mini:nth-child(4){ animation-delay:.36s; }
-    .mini:nth-child(6){ animation-delay:.54s; }
-
-    @keyframes twinkle{
-      0%,100%{ transform:scale(.7); opacity:.45; }
-      50%{ transform:scale(1.25); opacity:1; }
-    }
-
-    .heart{
-      width:11px; height:11px; background:linear-gradient(135deg, #ff7aa5, #ff4b77);
-      border-radius:50% 50% 0 0; position:relative; transform:rotate(-45deg);
-      animation: beat 1.2s infinite ease-in-out;
-      box-shadow:0 0 20px rgba(255,94,141,.35);
-      flex:0 0 auto;
-    }
-    .heart::before,.heart::after{
-      content:""; position:absolute; width:11px; height:11px; background:inherit; border-radius:50%;
-    }
-    .heart::before{ top:-5.5px; left:0; }
-    .heart::after{ top:0; left:5.5px; }
-
-    @keyframes beat{
-      0%,100%{ transform:rotate(-45deg) scale(1); }
-      50%{ transform:rotate(-45deg) scale(1.2); }
-    }
-
-    .love-title{
-      margin:0;
-      font-size:clamp(1.22rem, 4.5vw, 1.85rem);
-      letter-spacing:.2px;
-      line-height:1.15;
-    }
-    .love-subtitle{
-      margin:10px 0 0 0;
-      color:var(--muted);
-      font-size:.95rem;
-      line-height:1.5;
-    }
-
-    .counter-wrap{ padding:18px; }
-
-    .counter{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:12px;
-    }
-
-    .tile{
-      position:relative;
-      overflow:hidden;
-      min-height:96px;
-      padding:14px 13px;
-      border-radius:20px;
-      border:1px solid rgba(255,255,255,.10);
-      background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
-      transform: translateZ(0);
-    }
-
-    .tile::before{
-      content:"";
-      position:absolute;
-      inset:-40% -40% auto auto;
-      width:130px; height:130px;
-      background:radial-gradient(circle, rgba(255,255,255,.10), transparent 68%);
-      pointer-events:none;
-    }
-
-    .label{
-      display:flex; align-items:center; gap:8px;
-      color:var(--muted);
-      font-size:.76rem;
-      text-transform:uppercase;
-      letter-spacing:.28px;
-      margin-bottom:7px;
-    }
-
-    .label .sym{
-      width:16px; height:16px; border-radius:50%;
-      display:grid; place-items:center;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.08);
-      color:#fff;
-      font-size:.72rem;
-      box-shadow:0 0 10px rgba(255,255,255,.08);
-      flex:0 0 auto;
-    }
-
-    .value{
-      font-size:clamp(1.25rem, 5vw, 2rem);
-      font-weight:800;
-      letter-spacing:.2px;
-      line-height:1.05;
-      font-variant-numeric: tabular-nums;
-      text-shadow: 0 0 12px rgba(255,255,255,.05);
-    }
-
-    .full-width{
-      grid-column:1 / -1;
-      min-height:104px;
-    }
-
-    .info-stack{
-      margin-top:12px;
-      display:grid;
-      gap:10px;
-    }
-
-    .info-box{
-      padding:14px 15px;
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.05);
-      color:var(--muted);
-      font-size:.92rem;
-      line-height:1.55;
-    }
-
-    .info-box strong{ color:var(--text); font-weight:700; }
-
-    .button-row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      margin-top:12px;
-    }
-
-    .btn{
-      appearance:none; border:none; cursor:pointer;
-      border-radius:16px; padding:13px 14px;
-      color:white; font-weight:800;
-      letter-spacing:.2px; font-size:.95rem;
-      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
-      box-shadow:0 12px 28px rgba(0,0,0,.25);
-    }
-    .btn:active{ transform:scale(.98); filter:brightness(1.03); }
-
-    .btn-primary{
-      background:linear-gradient(135deg, #ff5d8f, #ff8ea9);
-      box-shadow: 0 14px 28px rgba(255,94,141,.20);
-    }
-
-    .btn-secondary{
-      background:linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
-      border:1px solid rgba(255,255,255,.12);
-    }
-
-    .sparkle-line{
-      margin-top:14px;
-      display:flex; align-items:center; justify-content:center; gap:8px;
-      color:rgba(255,255,255,.7);
-      font-size:.86rem;
-      flex-wrap:wrap;
-    }
-
-    .spark{
-      width:6px; height:6px; border-radius:50%;
-      background:#fff; opacity:.88;
-      box-shadow:0 0 12px rgba(255,255,255,.75);
-      animation: tw 1.6s infinite ease-in-out;
-    }
-    .spark:nth-child(2){ animation-delay:.2s; }
-    .spark:nth-child(4){ animation-delay:.4s; }
-
-    @keyframes tw{
-      0%,100%{ transform:scale(.72); opacity:.45; }
-      50%{ transform:scale(1.2); opacity:1; }
-    }
-
-    .footer-note{
-      text-align:center;
-      color:rgba(247,247,251,.56);
-      font-size:.78rem;
-      padding:0 18px 16px 18px;
-    }
-
-    .overlay{
-      position:fixed; inset:0; z-index:10;
-      background:rgba(5,5,8,.72);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      display:grid; place-items:center;
-      padding:18px;
-    }
-
-    .setup{
-      width:min(100%, 430px);
-      border-radius:28px;
-      padding:18px;
-      border:1px solid rgba(255,255,255,.12);
-      background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.08));
-      box-shadow: var(--shadow);
-      animation: rise .6s ease both;
-    }
-
-    .setup h1{
-      margin:6px 0 8px 0;
-      text-align:center;
-      font-size:1.35rem;
-      line-height:1.2;
-    }
-
-    .setup p{
-      margin:0 0 16px 0;
-      text-align:center;
-      color:var(--muted);
-      font-size:.94rem;
-      line-height:1.5;
-    }
-
-    .field{ display:grid; gap:8px; margin-top:12px; }
-    .field label{
-      font-size:.82rem;
-      color:var(--muted);
-      padding-left:2px;
-    }
-
-    .input{
-      width:100%;
-      border-radius:16px;
-      padding:14px 14px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(0,0,0,.20);
-      color:var(--text);
-      font-size:1rem;
-      outline:none;
-    }
-
-    .input:focus{
-      border-color:rgba(255,94,141,.55);
-      box-shadow:0 0 0 4px rgba(255,94,141,.12);
-    }
-
-    .setup-actions{ display:grid; gap:10px; margin-top:16px; }
-
-    .hint{
-      margin-top:10px;
-      color:rgba(247,247,251,.56);
-      font-size:.78rem;
-      text-align:center;
-      line-height:1.4;
-    }
-
-    .hidden{ display:none !important; }
-
-    /* Botón de instalación (flotante) */
-    .install-btn-wrap {
-      text-align: center;
-      padding: 6px 18px 12px 18px;
-    }
-    .install-btn {
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.15);
-      color: #fff;
-    }
-
-    @media (max-width: 380px){
-      .counter{ grid-template-columns:1fr; }
-      .button-row{ grid-template-columns:1fr; }
-      .topbar{ align-items:flex-start; }
-      .status{ font-size:.76rem; }
-    }
-
-    /* Ajuste para modo standalone (sin barras) */
-    @media (display-mode: standalone) {
-      body {
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
-      }
-    }
-  </style>
+        /* Pantalla de la App (Instalada) */
+        #app-screen { max-width: 400px; width: 100%; background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { color: #ff4081; margin-bottom: 5px; }
+        .subtitle { font-size: 0.85rem; color: #777; margin-bottom: 15px; }
+        .input-group { margin: 12px 0; display: flex; gap: 10px; justify-content: center; }
+        input { padding: 12px; width: 100%; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; background: #fafafa; }
+        input:read-only { background: #eee; color: #555; }
+        .btn { padding: 12px 20px; background: #ff4081; color: white; border: none; border-radius: 10px; font-weight: 500; cursor: pointer; }
+        .btn-outline { background: transparent; border: 1px solid #ff4081; color: #ff4081; }
+        .btn-danger { background: #dc3545; }
+        .actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        
+        .counter-box { margin: 20px 0; padding: 15px; background: linear-gradient(to bottom, #fff5f7, #fff); border-radius: 15px; border: 1px solid #ffe0e6; }
+        .decor { color: #ff4081; font-weight: bold; }
+        .live-tag { background: #ff4081; color: white; padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; display: inline-block; margin-bottom: 5px; }
+        .date-display { font-size: 0.85rem; color: #888; margin: 10px 0; }
+        .values { font-size: 1.1rem; line-height: 2.2; }
+    </style>
 </head>
 <body>
-  <canvas id="fireflies"></canvas>
-  <div class="ambient"></div>
 
-  <div class="overlay" id="overlay">
-    <div class="setup">
-      <h1>Inicio de la relación</h1>
-      <p>Ingresa la fecha en que comenzó todo. El contador se guardará y seguirá avanzando solo.</p>
-
-      <div class="field">
-        <label for="name1">Nombre 1</label>
-        <input class="input" id="name1" type="text" placeholder="Tu nombre" autocomplete="off" />
-      </div>
-
-      <div class="field">
-        <label for="name2">Nombre 2</label>
-        <input class="input" id="name2" type="text" placeholder="Nombre de la otra persona" autocomplete="off" />
-      </div>
-
-      <div class="field">
-        <label for="startDate">Fecha de inicio</label>
-        <input class="input" id="startDate" type="date" />
-      </div>
-
-      <div class="setup-actions">
-        <button class="btn btn-primary" id="saveBtn">Guardar</button>
-      </div>
-
-      <div class="hint">
-        Se guarda en este mismo dispositivo. Podrás editarlo después.
-      </div>
+    <!-- VISTA WEB: Bloqueada hasta instalar -->
+    <div id="install-screen">
+        <h1>📲 Debes instalar la aplicación</h1>
+        <p>Para proteger tus datos y garantizar el funcionamiento en tiempo real, esta herramienta solo está disponible cuando se instala como aplicación.</p>
+        <button id="install-btn" class="install-btn" disabled>Descargar e Instalar Aplicación</button>
+        <div id="ios-help" class="ios-hint">            🍎 <strong>En iPhone/iPad:</strong> Toca el botón compartir <span style="font-size:1.2em">⬆️</span> y selecciona <em>"Agregar a Inicio"</em>.
+        </div>
+        <p class="footer-note">Guardado local seguro • Sin conexión • 100% Privado</p>
     </div>
-  </div>
 
-  <main class="shell">
-    <section class="card hidden" id="appCard">
-      <div class="topbar">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 20.5c5.2-3.7 8.5-7.4 8.5-11.2A4.8 4.8 0 0 0 15.7 4c-1.6 0-3 .8-3.7 2-0.7-1.2-2.1-2-3.7-2A4.8 4.8 0 0 0 3.5 9.3c0 3.8 3.3 7.5 8.5 11.2Z" stroke="url(#g)" stroke-width="1.7" stroke-linejoin="round"/>
-              <defs>
-                <linearGradient id="g" x1="3.5" y1="4" x2="20.5" y2="20.5" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#ff7aa5"/>
-                  <stop offset="1" stop-color="#ffd1df"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <div class="brand-title">
-            <strong id="titleName">Tiempo juntos</strong>
-            <span id="subtitleName">Contador romántico</span>
-          </div>
+    <!-- VISTA APP: Funcional solo cuando está instalada -->
+    <div id="app-screen" class="hidden">
+        <h2>Tiempo Juntos</h2>
+        <p class="subtitle">Inicio de la relación</p>
+        
+        <div class="input-group">
+            <input type="text" id="name1" placeholder="Nombre 1" readonly>
+            <input type="text" id="name2" placeholder="Nombre 2" readonly>
+        </div>
+        <div class="input-group">
+            <input type="date" id="startDate" readonly>
+        </div>
+        
+        <div class="actions">
+            <button id="saveBtn" class="btn hidden">Guardar</button>
+            <button id="editBtn" class="btn btn-outline">Editar</button>
+            <button id="clearBtn" class="btn btn-danger">Borrar datos</button>
         </div>
 
-        <div class="status">
-          <span class="status-dot"></span>
-          En vivo
-        </div>
-      </div>
-
-      <div class="hero">
-        <div class="symbol-line" aria-hidden="true">
-          <span class="heart"></span>
-          <span class="mini"></span>
-          <span>•</span>
-          <span class="mini"></span>
-          <span>⋆</span>
-          <span class="mini"></span>
-          <span>⋇</span>
-          <span class="mini"></span>
-          <span>•</span>
-          <span class="heart"></span>
+        <div class="counter-box">
+            <span class="live-tag">En vivo</span>
+            <p class="decor">•⋆⋇• Tiempo juntos • Contador romántico</p>
+            <p style="font-size:0.9rem; margin: 10px 0;">Cada segundo suma, cada minuto queda guardado y cada día cuenta una historia.</p>
+            <div class="values">
+                <span class="decor">✦</span> Años <span id="years">0</span> 
+                <span class="decor">◌</span> Meses <span id="months">0</span> 
+                <span class="decor">❋</span> Días <span id="days">0</span><br>
+                <span class="decor">◈</span> Horas <span id="hours">00</span> 
+                <span class="decor">⟡</span> Minutos <span id="minutes">00</span> 
+                <span class="decor">✧</span> Segundos <span id="seconds">00</span>
+            </div>
         </div>
 
-        <h2 class="love-title" id="headline">Un detalle para ustedes</h2>
-        <p class="love-subtitle" id="quote">
-          Cada segundo suma, cada minuto queda guardado y cada día cuenta una historia.
-        </p>
-      </div>
+        <p class="date-display">Desde el <span id="display-date">—</span> — Esperando datos...</p>
+        <p style="font-size: 0.75rem; color: #999; margin-top: 15px;">📲 Guardado localmente en este dispositivo.</p>
+    </div>
 
-      <div class="counter-wrap">
-        <div class="counter">
-          <div class="tile">
-            <span class="label"><span class="sym">✦</span> Años</span>
-            <div class="value" id="years">0</div>
-          </div>
-          <div class="tile">
-            <span class="label"><span class="sym">◌</span> Meses</span>
-            <div class="value" id="months">0</div>
-          </div>
-          <div class="tile">
-            <span class="label"><span class="sym">❋</span> Días</span>
-            <div class="value" id="days">0</div>
-          </div>
-          <div class="tile">
-            <span class="label"><span class="sym">◈</span> Horas</span>
-            <div class="value" id="hours">00</div>
-          </div>
-          <div class="tile">
-            <span class="label"><span class="sym">⟡</span> Minutos</span>
-            <div class="value" id="minutes">00</div>
-          </div>
-          <div class="tile">
-            <span class="label"><span class="sym">✧</span> Segundos</span>
-            <div class="value" id="seconds">00</div>
-          </div>
-        </div>
+    <script>
+        // 1. DETECCIÓN: ¿Está instalada como app o se ve en navegador?
+        const isInstalledApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-        <div class="info-stack">
-          <div class="info-box" id="detailsBox">
-            Desde el <strong id="startText">—</strong><br />
-            <span id="fullDetails">Esperando datos...</span>
-          </div>
+        const installScreen = document.getElementById('install-screen');
+        const appScreen = document.getElementById('app-screen');
+        const installBtn = document.getElementById('install-btn');
+        const iosHelp = document.getElementById('ios-help');
+        if (!isInstalledApp) {
+            // MODO NAVEGADOR: Bloquear app, mostrar instalación
+            installScreen.classList.remove('hidden');
+            appScreen.classList.add('hidden');
+            
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            if (isIOS) {
+                installBtn.disabled = true;
+                installBtn.textContent = 'iOS requiere instalación manual';
+                iosHelp.style.display = 'block';
+            }
 
-          <div class="button-row">
-            <button class="btn btn-primary" id="editBtn">Editar</button>
-            <button class="btn btn-secondary" id="clearBtn">Borrar datos</button>
-          </div>
+            // Capturar evento de instalación PWA
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installBtn.disabled = false;
+            });
 
-          <!-- Botón de instalación (aparece si el navegador lo soporta) -->
-          <div class="install-btn-wrap hidden" id="installPromptWrap">
-            <button class="btn install-btn" id="installBtn">📲 Instalar en pantalla principal</button>
-          </div>
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`Resultado instalación: ${outcome}`);
+                    deferredPrompt = null;
+                } else {
+                    alert('La instalación automática no está disponible aquí. Usa el menú del navegador (⋮ o ⬆️) y selecciona "Instalar aplicación" o "Agregar a pantalla de inicio".');
+                }
+            });
+        } else {
+            // MODO APP INSTALADA: Mostrar interfaz y activar lógica
+            installScreen.classList.add('hidden');
+            appScreen.classList.remove('hidden');
+            initAppLogic();
+        }
 
-          <div class="sparkle-line" aria-hidden="true">
-            <span class="spark"></span>
-            <span>⋆</span>
-            <span class="spark"></span>
-            <span>⋇</span>
-            <span class="spark"></span>
-          </div>
-        </div>
-      </div>
+        // 2. LÓGICA DE LA APP (Solo se ejecuta si está instalada)
+        function initAppLogic() {
+            const name1In = document.getElementById('name1');
+            const name2In = document.getElementById('name2');
+            const dateIn = document.getElementById('startDate');
+            const saveBtn = document.getElementById('saveBtn');
+            const editBtn = document.getElementById('editBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const displayDate = document.getElementById('display-date');
 
-      <div class="footer-note">
-        Guardado localmente en este dispositivo.
-      </div>
-    </section>
-  </main>
+            // Cargar datos
+            const data = JSON.parse(localStorage.getItem('tiempoJuntos') || '{}');            if (data.startDate) {
+                name1In.value = data.name1 || '';
+                name2In.value = data.name2 || '';
+                dateIn.value = data.startDate;
+                displayDate.textContent = new Date(data.startDate).toLocaleDateString();
+                toggleEdit(false);
+                startCounter(data.startDate);
+            }
 
-  <script>
-    // ──────────────────────────────────────
-    // 1. Registro dinámico del Service Worker
-    // ──────────────────────────────────────
-    if ('serviceWorker' in navigator) {
-      const swCode = `
-        const CACHE_NAME = 'tiempo-juntos-v2';
-        const ASSETS = [self.location.href];
+            function toggleEdit(editing) {
+                [name1In, name2In, dateIn].forEach(i => i.readOnly = !editing);
+                saveBtn.classList.toggle('hidden', !editing);
+                editBtn.classList.toggle('hidden', editing);
+            }
 
-        self.addEventListener('install', event => {
-          event.waitUntil(
-            caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-          );
-          self.skipWaiting();
-        });
+            editBtn.onclick = () => toggleEdit(true);
+            
+            saveBtn.onclick = () => {
+                const newData = { name1: name1In.value, name2: name2In.value, startDate: dateIn.value };
+                localStorage.setItem('tiempoJuntos', JSON.stringify(newData));
+                displayDate.textContent = new Date(newData.startDate).toLocaleDateString();
+                toggleEdit(false);
+                startCounter(newData.startDate);
+            };
 
-        self.addEventListener('activate', event => {
-          event.waitUntil(
-            caches.keys().then(keys =>
-              Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-            )
-          );
-          self.clients.claim();
-        });
+            clearBtn.onclick = () => {
+                if (confirm('¿Estás seguro de borrar todos los datos?')) {
+                    localStorage.removeItem('tiempoJuntos');
+                    location.reload();
+                }
+            };
 
-        self.addEventListener('fetch', event => {
-          event.respondWith(
-            caches.match(event.request).then(cached => cached || fetch(event.request))
-          );
-        });
-      `;
-      const swBlob = new Blob([swCode], { type: 'application/javascript' });
-      const swUrl = URL.createObjectURL(swBlob);
-      navigator.serviceWorker.register(swUrl).catch(() => {});
-    }
+            let timer;
+            function startCounter(startStr) {
+                if (timer) clearInterval(timer);
+                const start = new Date(startStr + 'T00:00:00');
+                
+                const update = () => {
+                    const now = new Date();
+                    let diff = Math.max(0, now - start);
+                    
+                    const sec = Math.floor(diff / 1000);
+                    const min = Math.floor(sec / 60);
+                    const hr = Math.floor(min / 60);
+                    const day = Math.floor(hr / 24);
+                    
+                    const years = Math.floor(day / 365.25);
+                    const remDaysY = day - Math.floor(years * 365.25);
+                    const months = Math.floor(remDaysY / 30.44);
+                    const days = Math.floor(remDaysY - months * 30.44);                    
+                    document.getElementById('years').textContent = years;
+                    document.getElementById('months').textContent = months;
+                    document.getElementById('days').textContent = days;
+                    document.getElementById('hours').textContent = String(hr % 24).padStart(2, '0');
+                    document.getElementById('minutes').textContent = String(min % 60).padStart(2, '0');
+                    document.getElementById('seconds').textContent = String(sec % 60).padStart(2, '0');
+                };
+                
+                update();
+                timer = setInterval(update, 1000);
+            }
+        }
 
-    // ──────────────────────────────────────
-    // 2. Generación dinámica del manifest (PWA)
-    // ──────────────────────────────────────
-    function createManifest() {
-      const manifest = {
-        name: 'Tiempo Juntos',
-        short_name: 'Juntos',
-        description: 'Contador romántico de tiempo compartido',
-        start_url: location.href,
-        display: 'standalone',
-        orientation: 'portrait',
-        background_color: '#050507',
-        theme_color: '#0b0b10',
-        icons: [{
-          src: 'data:image/svg+xml,' + encodeURIComponent(
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><linearGradient id="g" x1="3.5" y1="4" x2="20.5" y2="20.5"><stop stop-color="#ff7aa5"/><stop offset="1" stop-color="#ffd1df"/></linearGradient></defs><path fill="url(#g)" d="M12 20.5c5.2-3.7 8.5-7.4 8.5-11.2A4.8 4.8 0 0 0 15.7 4c-1.6 0-3 .8-3.7 2-0.7-1.2-2.1-2-3.7-2A4.8 4.8 0 0 0 3.5 9.3c0 3.8 3.3 7.5 8.5 11.2Z"/></svg>'
-          ),
-          sizes: '192x192',
-          type: 'image/svg+xml',
-          purpose: 'any maskable'
-        }]
-      };
-
-      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-      const manifestUrl = URL.createObjectURL(blob);
-      const link = document.createElement('link');
-      link.rel = 'manifest';
-      link.href = manifestUrl;
-      document.head.appendChild(link);
-    }
-
-    createManifest();
-
-    // ──────────────────────────────────────
-    // 3. Lógica de instalación (botón "Instalar")
-    // ──────────────────────────────────────
-    let deferredPrompt = null;
-    const installWrap = document.getElementById('installPromptWrap');
-    const installBtn = document.getElementById('installBtn');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installWrap.classList.remove('hidden');
-    });
-
-    installBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        installWrap.classList.add('hidden');
-        deferredPrompt = null;
-      }
-    });
-
-    window.addEventListener('appinstalled', () => {
-      installWrap.classList.add('hidden');
-      deferredPrompt = null;
-    });
-
-    // ──────────────────────────────────────
-    // 4. Contador y datos (ya existente)
-    // ──────────────────────────────────────
-    const STORAGE_KEY = "love_counter_data_v2";
-
-    const overlay = document.getElementById("overlay");
-    const appCard = document.getElementById("appCard");
-    const saveBtn = document.getElementById("saveBtn");
-    const editBtn = document.getElementById("editBtn");
-    const clearBtn = document.getElementById("clearBtn");
-
-    const name1Input = document.getElementById("name1");
-    const name2Input = document.getElementById("name2");
-    const startDateInput = document.getElementById("startDate");
-
-    const titleName = document.getElementById("titleName");
-    const subtitleName = document.getElementById("subtitleName");
-    const headline = document.getElementById("headline");
-    const quote = document.getElementById("quote");
-
-    const yearsEl = document.getElementById("years");
-    const monthsEl = document.getElementById("months");
-    const daysEl = document.getElementById("days");
-    const hoursEl = document.getElementById("hours");
-    const minutesEl = document.getElementById("minutes");
-    const secondsEl = document.getElementById("seconds");
-    const startText = document.getElementById("startText");
-    const fullDetails = document.getElementById("fullDetails");
-
-    let data = loadData();
-    let updateTimer = null;
-
-    function loadData() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : null;
-      } catch {
-        return null;
-      }
-    }
-
-    function saveData(payload) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    }
-
-    function pad(n) {
-      return String(n).padStart(2, "0");
-    }
-
-    function formatDateLong(date) {
-      return date.toLocaleDateString("es-PE", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-      });
-    }
-
-    function getExactDiff(start, end) {
-      const s = new Date(start);
-      const e = new Date(end);
-
-      let years = e.getFullYear() - s.getFullYear();
-      let months = e.getMonth() - s.getMonth();
-      let days = e.getDate() - s.getDate();
-      let hours = e.getHours() - s.getHours();
-      let minutes = e.getMinutes() - s.getMinutes();
-      let seconds = e.getSeconds() - s.getSeconds();
-
-      if (seconds < 0) { seconds += 60; minutes--; }
-      if (minutes < 0) { minutes += 60; hours--; }
-      if (hours < 0) { hours += 24; days--; }
-
-      if (days < 0) {
-        const prevMonth = new Date(e.getFullYear(), e.getMonth(), 0).getDate();
-        days += prevMonth;
-        months--;
-      }
-
-      if (months < 0) {
-        months += 12;
-        years--;
-      }
-
-      return { years, months, days, hours, minutes, seconds };
-    }
-
-    function updateUI() {
-      if (!data || !data.startDate) return;
-
-      const start = new Date(data.startDate + "T00:00:00");
-      const now = new Date();
-      const diff = getExactDiff(start, now);
-      const totalMs = now - start;
-      const totalDays = Math.floor(totalMs / (1000 * 60 * 60 * 24));
-
-      yearsEl.textContent = diff.years;
-      monthsEl.textContent = diff.months;
-      daysEl.textContent = diff.days;
-      hoursEl.textContent = pad(diff.hours);
-      minutesEl.textContent = pad(diff.minutes);
-      secondsEl.textContent = pad(diff.seconds);
-
-      const a = data.name1?.trim() || "persona 1";
-      const b = data.name2?.trim() || "persona 2";
-
-      titleName.textContent = data.name2?.trim() ? `Un gran amor` : "Tiempo juntos";
-      subtitleName.textContent = data.name2?.trim() ? `${a} y ${b}` : "Contador romántico";
-      headline.textContent = data.name2?.trim() ? `Tiempo juntos, ${a} y ${b}` : "Un detalle para ustedes";
-      quote.textContent = data.name2?.trim()
-        ? "Cada segundo suma, cada minuto queda guardado y cada día cuenta una historia."
-        : "Cada segundo suma, cada minuto queda guardado y cada día cuenta una historia.";
-
-      startText.textContent = formatDateLong(start);
-      fullDetails.textContent = `Han pasado ${diff.years} años, ${diff.months} meses, ${diff.days} días, ${diff.hours} horas, ${diff.minutes} minutos y ${diff.seconds} segundos. Total aproximado: ${totalDays} días.`;
-
-      appCard.classList.remove("hidden");
-    }
-
-    function openSetup(prefill = true) {
-      overlay.classList.remove("hidden");
-      appCard.classList.add("hidden");
-
-      if (prefill && data) {
-        name1Input.value = data.name1 || "";
-        name2Input.value = data.name2 || "";
-        startDateInput.value = data.startDate || "";
-      } else {
-        name1Input.value = "";
-        name2Input.value = "";
-        startDateInput.value = "";
-      }
-    }
-
-    function closeSetup() {
-      overlay.classList.add("hidden");
-      appCard.classList.remove("hidden");
-    }
-
-    function validateAndSave() {
-      const startDate = startDateInput.value;
-      const name1 = name1Input.value.trim();
-      const name2 = name2Input.value.trim();
-
-      if (!startDate) {
-        alert("Selecciona una fecha válida.");
-        return;
-      }
-
-      const chosen = new Date(startDate + "T00:00:00");
-      const today = new Date();
-      const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-
-      if (chosen > todayMidnight) {
-        alert("La fecha no puede ser futura.");
-        return;
-      }
-
-      data = { name1, name2, startDate };
-      saveData(data);
-      closeSetup();
-      updateUI();
-
-      if (updateTimer) clearInterval(updateTimer);
-      updateTimer = setInterval(updateUI, 1000);
-    }
-
-    saveBtn.addEventListener("click", validateAndSave);
-    editBtn.addEventListener("click", () => openSetup(true));
-    clearBtn.addEventListener("click", () => {
-      const ok = confirm("¿Borrar los datos guardados?");
-      if (!ok) return;
-      localStorage.removeItem(STORAGE_KEY);
-      data = null;
-      if (updateTimer) clearInterval(updateTimer);
-      openSetup(false);
-    });
-
-    if (data && data.startDate) {
-      closeSetup();
-      updateUI();
-      updateTimer = setInterval(updateUI, 1000);
-    } else {
-      openSetup(false);
-    }
-
-    // ──────────────────────────────────────
-    // 5. Luciérnagas (canvas)
-    // ──────────────────────────────────────
-    const canvas = document.getElementById("fireflies");
-    const ctx = canvas.getContext("2d");
-    let w = 0, h = 0, fireflies = [];
-
-    function resize() {
-      w = canvas.width = window.innerWidth * devicePixelRatio;
-      h = canvas.height = window.innerHeight * devicePixelRatio;
-      canvas.style.width = window.innerWidth + "px";
-      canvas.style.height = window.innerHeight + "px";
-      initFireflies();
-    }
-
-    function initFireflies() {
-      const count = Math.max(44, Math.min(96, Math.floor(window.innerWidth / 7)));
-      fireflies = Array.from({ length: count }, () => ({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        r: (Math.random() * 1.8 + 0.8) * devicePixelRatio,
-        vx: (Math.random() - 0.5) * 0.22 * devicePixelRatio,
-        vy: (Math.random() - 0.5) * 0.22 * devicePixelRatio,
-        glow: Math.random() * Math.PI * 2,
-        pulse: 0.6 + Math.random() * 0.8
-      }));
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, w, h);
-
-      for (const f of fireflies) {
-        f.x += f.vx;
-        f.y += f.vy;
-        f.glow += 0.02 * f.pulse;
-
-        if (f.x < -20 * devicePixelRatio) f.x = w + 20 * devicePixelRatio;
-        if (f.x > w + 20 * devicePixelRatio) f.x = -20 * devicePixelRatio;
-        if (f.y < -20 * devicePixelRatio) f.y = h + 20 * devicePixelRatio;
-        if (f.y > h + 20 * devicePixelRatio) f.y = -20 * devicePixelRatio;
-
-        const alpha = 0.22 + Math.abs(Math.sin(f.glow)) * 0.78;
-        const size = f.r * (0.7 + Math.abs(Math.sin(f.glow)) * 0.9);
-
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.shadowBlur = 20 * devicePixelRatio;
-        ctx.shadowColor = "rgba(255,255,255,0.46)";
-        ctx.fill();
-      }
-
-      requestAnimationFrame(draw);
-    }
-
-    window.addEventListener("resize", resize, { passive: true });
-    resize();
-    draw();
-
-    document.querySelectorAll(".input").forEach(el => {
-      el.addEventListener("keydown", e => {
-        if (e.key === "Enter") validateAndSave();
-      });
-    });
-  </script>
+        // 3. REGISTRO DE SERVICE WORKER & MANIFEST (Necesario para PWA)
+        if ('serviceWorker' in navigator) {
+            // SW mínimo inline
+            const swCode = `self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => e.waitUntil(self.clients.claim())); self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));`;
+            const swBlob = new Blob([swCode], {type: 'application/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.error);
+            
+            // Manifest inline dinámico
+            const manifest = {
+                name: "Tiempo Juntos", short_name: "Tiempo", start_url: "./", display: "standalone",
+                background_color: "#f8f9fa", theme_color: "#ff4081",
+                icons: [{ src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💕</text></svg>", sizes: "192x192", type: "image/svg+xml" }]
+            };
+            const mBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+            const link = document.createElement('link'); link.rel = 'manifest'; link.href = URL.createObjectURL(mBlob);
+            document.head.appendChild(link);
+        }
+    </script>
 </body>
 </html>
-```
